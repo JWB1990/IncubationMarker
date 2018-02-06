@@ -31,11 +31,9 @@ Sys.setenv(TZ='GMT')
 ##################
 # esencial
 ##################
-# crear una carpeta que se llama "results" donde guardar los patrones marcados
 # meter los datos crudos en un archivo tipo .csv que usa ";" como separadores
 # en una carpeta que se llama "hobo"
 #>MarcaPatrones/hobo/archivo_1.csv
-#>MarcaPatrones/results
 # Ademas, asegurate que el argumento sep en server.R en la linea del read.csv() esta adecuado
 # Ademas, todo fallara si no hay columnas que se llaman "nido", "huevo" y "amb"
 ##

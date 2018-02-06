@@ -443,6 +443,13 @@ if(input$mark_pattern==0){
   
   observeEvent(input$save_raw, {
     
+    
+    if (file.exists("result")){
+      
+    } else {
+      dir.create("result")
+    }
+    
     write.csv(values$all_datos_marcados, 
               file = paste("result/marcado_", input$archivo, sep = "")
               )
