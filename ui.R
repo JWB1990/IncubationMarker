@@ -94,21 +94,34 @@ conditionalPanel(condition="input.tabs=='manual'",
 ),
 
 conditionalPanel(condition="input.tabs=='cpa'",
-                 numericInput("movingaverage_width", "Window of Moving Average", value = 1, min = 1,max=500)
-)
+                 uiOutput("fitcontrols_cpa"),
+                 numericInput("movingaverage_width", "Ventana del Promedio", value = 10, min = 1,max=500),
+                 radioButtons("cpa_meth", "Metodologia de CPA", choices = c("PELT", "PELT Manual", "BinSeg"), selected = "PELT")
+                 #breakpoint controls             #1plot of time series with breakpoints, zoomable w brush
+                 #
+                 #move selected breakpoints       #2zoom window with removeable breakpoints (dblclick)
+                 #move y position of breakpoints  #select breakpoints to move
+                 #add breakpoints (single click)
+                 #generate fits from breakpoints
+                 #fit controls (umbrals) #window that shows marked_rects
+                 #for each event, is slope negative -> fit off, positive -> fit on
+                 
+                 )
       ),
       
     
     # Show a plot of the selected points
     mainPanel(
       tabsetPanel(
+       
+        
         tabPanel("Manual",
+                 
                  h3("La tabla cruda"),
                  
                  verbatimTextOutput("header"),
                  
                  h3("La serie de tiempo"),
-                 
                  #dataTableOutput("obs_raw"),
                  
                  plotOutput("plot1", width=1250,
@@ -151,7 +164,13 @@ conditionalPanel(condition="input.tabs=='cpa'",
                  
         ),
         tabPanel("CPA", 
-          
+                 h3("La tabla cruda"),
+                 
+                 verbatimTextOutput("header_cpa"),
+                 
+                 h3("La serie de tiempo"),
+                 
+          plotOutput("cpa_plot1"),
       #breakpoint controls             #1plot of time series with breakpoints, zoomable w brush
       #
       #move selected breakpoints       #2zoom window with removeable breakpoints (dblclick)

@@ -34,11 +34,11 @@ shinyServer(function(input, output) {
       if(input$col_fecha!=0){names(cru)[input$col_fecha]<-"fecha"}
       if(input$col_hora!=0){names(cru)[input$col_hora]<-"hora"}
       if(input$col_huevo!=0){names(cru)[input$col_huevo]<-"huevo"
-      as.numeric(gsub(cru$huevo, pattern = ",", replacement = ".", fixed = T))}
+      cru$huevo<-as.numeric(gsub(cru$huevo, pattern = ",", replacement = ".", fixed = T))}
       if(input$col_nido!=0){names(cru)[input$col_nido]<-"nido"
-      as.numeric(gsub(cru$nido, pattern = ",", replacement = ".", fixed = T))}
+      cru$nido<-as.numeric(gsub(cru$nido, pattern = ",", replacement = ".", fixed = T))}
       if(input$col_amb!=0){names(cru)[input$col_amb]<-"amb"
-      as.numeric(gsub(cru$amb, pattern = ",", replacement = ".", fixed = T))}
+      cru$amb<-as.numeric(gsub(cru$amb, pattern = ",", replacement = ".", fixed = T))}
       
       
   #asegura que los formatos estan corectos  
@@ -512,6 +512,49 @@ if(input$mark_pattern==0){
               file = paste("result/marcado_", input$archivo, sep = "")
               )
     js$reset()
+  })
+  
+  
+  ####################################################
+  # CPA
+  ####################################################
+  
+  output$header_cpa<-renderPrint({
+    o=datos_crudos_pre()
+    rbind(names(o))
+  })
+  #make reactive fit choice
+  output$fitcontrols_cpa <- renderUI({
+    avail<-names(datos_crudos())[names(datos_crudos()) %in% c("nido", "huevo")]
+    radioButtons("fit_selector_cpa", "Que fit quieres correr?",
+                 choices =  avail)
+  })
+  cpa_pts1<-reactive({
+    cru<-datos_crudos()
+    
+    col<-input$fit_selector_cpa
+    
+    m.data<-rollmean(cru[,col], k=input$movingaverage_width)
+    
+    #fix this so t is right
+    
+    d=data.frame("ts"=cru$ts[1:length(m.data)],
+               "temperatura"=m.data)
+    m.pelt=cpt.mean(d$temperatura,method="PELT")
+    m.points<-cpts(m.pelt)
+    
+    d[m.points,]
+    
+  })
+  
+  output$cpa_plot1 <- renderPlot({
+    cr<-datos()
+    ggplot(data=cr,
+           aes(x=ts, y=temperatura))+geom_line(aes(colour=sensor))+
+      scale_x_datetime(breaks = seq(floor_date(min(cr$ts), unit = "days"),floor_date(max(cr$ts), unit = "days"), 
+                                    by="12 hours"))+
+      ylim(input$ylim)+geom_point(data=cpa_pts1(), aes(x=ts, y=temperatura))
+    
   })
   
 })

@@ -12,7 +12,7 @@
 ################################################
 
 
-
+library(changepoint)
 library(devtools)
 library(dplyr)
 library(ggplot2)
@@ -24,6 +24,7 @@ library(shinydashboard)
 library(shinyjs)
 library(thermPerf)
 library(tidyr)
+library(zoo)
 
 Sys.setenv(TZ='GMT')
 
@@ -61,3 +62,10 @@ jsResetCode <- "shinyjs.reset = function() {history.go(0)}" # Define the js meth
 
 #6. works for all combinations of data present?
 #should work
+
+
+####################
+# remove linear fit, replace with mean estimate so its always worse than the cooling newton
+# lines 33-41
+# for nido sensors, cooling newton is not maybe the best
+#####################
