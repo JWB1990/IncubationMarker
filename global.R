@@ -50,11 +50,14 @@ events<-c("Off"  ,"On"   )
 # features to add
 ####
 #1. add your day 0 of development
+#should work
 #reset collection/mapped events after save data
 jsResetCode <- "shinyjs.reset = function() {history.go(0)}" # Define the js method that resets the page
 
 #3. proportional threshold
+#yes
 #4. record threshold used
-#5. dont record estimated ambient temp when not needed
+
 
 #6. works for all combinations of data present?
+#should work

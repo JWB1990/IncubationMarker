@@ -371,7 +371,7 @@ cool_newton_on<-reactive({
       T_s<-as.numeric(on_newton_pars[names(on_newton_pars)=="T_s"])
       a<-as.numeric(on_newton_pars[names(on_newton_pars)=="a"])
       
-      log((input$umbral_on)/(T_s-0))/a
+      log((input$umbral_on*T_s)/(T_s-0))/a
 
     }
   })
@@ -384,14 +384,14 @@ cool_newton_on<-reactive({
       fits<-fits()
       off_newton_pars<-fits$cool_newton_off$m$getAllPars()
       a<-as.numeric(off_newton_pars[names(off_newton_pars)=="a"])
-      log((-input$umbral_off)/(T_amb_event()-max( y() )))/a
+      log((-input$umbral_off*max(y()))/(T_amb_event()-max( y() )))/a
     } else if(input$col_amb==0){
       fits<-fits()
       off_newton_pars<-fits$cool_newton_off_noamb$m$getAllPars()
       a<-as.numeric(off_newton_pars[names(off_newton_pars)=="a"])
       T_s<-as.numeric(off_newton_pars[names(off_newton_pars)=="T_s"])
       
-      log((-input$umbral_off)/(T_s-max( y() )))/a
+      log((-input$umbral_off*max(y()))/(T_s-max( y() )))/a
     }
   })
 

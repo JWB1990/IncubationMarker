@@ -74,7 +74,7 @@ shinyUI(fluidPage(
         "input.event_class=='1'"
         ,
         fluidRow(
-          numericInput("umbral_off", "umbral_off", 0.5, min=0, max=3),
+          numericInput("umbral_off", "umbral_off", 0.1, min=0, max=3),
           
           numericInput("init_newton_off_a", "init_newton_off_a", -0.5, min=-1000, max=1000)
           ))
@@ -83,7 +83,7 @@ shinyUI(fluidPage(
         "input.event_class=='2'"
         ,
         fluidRow(
-          numericInput("umbral_on", "umbral_on", 0.5, min=0, max=3),
+          numericInput("umbral_on", "umbral_on", 0.1, min=0, max=3),
           
           numericInput("init_newton_on_a", "init_newton_on_a", -0.7, min=-1000, max=1000),
           numericInput("init_newton_on_T_s", "init_newton_on_T_s", 10, min=-10000, max=10000)
@@ -96,6 +96,7 @@ shinyUI(fluidPage(
     
     # Show a plot of the selected points
     mainPanel(
+      
       h3("La tabla cruda"),
       
       verbatimTextOutput("header"),
