@@ -42,11 +42,12 @@ shinyUI(fluidPage(
        ))
       ),
       actionButton("load", "Carga los datos"),
-      dateInput("day_zero", "Cuando es el dia 0? (dejala vacio si desconocido)", value = NA),
+      dateInput("day_zero", "Cuando es el dia 0? (dejala vacio si desconocido: yyyy-mm-dd)", value = NA),
       fluidRow(
        sliderInput("ylim", "Limite de Y", min=0, max=100, value = c(10,40))
        )
       ,
+conditionalPanel(condition="input.tabs=='manual'",
       HTML(
       rep(c("<br>" ,"</br>"),10)
       ),
@@ -61,17 +62,17 @@ shinyUI(fluidPage(
         rep(c("<br>" ,"</br>"),10)
       ),
       fluidRow(
-        radioButtons("fit_selector", "Que fit quieres correr?",
-                     choices =  c("nido", "huevo")
+        uiOutput("fitcontrols")
+        
         )
-      )
+      
       ,
       
       ###Init helper
       
       
       conditionalPanel(
-        "input.event_class=='1'"
+        "input.event_class=='1' && input.tabs=='manual'"
         ,
         fluidRow(
           numericInput("umbral_off", "umbral_off", 0.1, min=0, max=3),
@@ -80,7 +81,7 @@ shinyUI(fluidPage(
           ))
       ,
       conditionalPanel(
-        "input.event_class=='2'"
+        "input.event_class=='2'&& input.tabs=='manual'"
         ,
         fluidRow(
           numericInput("umbral_on", "umbral_on", 0.1, min=0, max=3),
@@ -90,56 +91,79 @@ shinyUI(fluidPage(
         ))
       #,
     
-      
+),
+
+conditionalPanel(condition="input.tabs=='cpa'",
+                 numericInput("movingaverage_width", "Window of Moving Average", value = 1, min = 1,max=500)
+)
       ),
       
     
     # Show a plot of the selected points
     mainPanel(
-      
-      h3("La tabla cruda"),
-      
-      verbatimTextOutput("header"),
-      
-       h3("La serie de tiempo"),
-      
-    #dataTableOutput("obs_raw"),
-       
-       plotOutput("plot1", width=1250,
-                  brush = brushOpts(
-                    id = "plot1_brush", direction = "x"
-                  )),
-      
-      fluidRow(
-        column(width=12,
-      
-      h3("Seleccione el tipo y marca un evento"),
-      uiOutput("plotui")
-
-      )
-      ),
-      fluidRow(
-        column(8,
-        plotOutput("evento_marcado", width=800, height = 800)
+      tabsetPanel(
+        tabPanel("Manual",
+                 h3("La tabla cruda"),
+                 
+                 verbatimTextOutput("header"),
+                 
+                 h3("La serie de tiempo"),
+                 
+                 #dataTableOutput("obs_raw"),
+                 
+                 plotOutput("plot1", width=1250,
+                            brush = brushOpts(
+                              id = "plot1_brush", direction = "x"
+                            )),
+                 
+                 fluidRow(
+                   column(width=12,
+                          
+                          h3("Seleccione el tipo y marca un evento"),
+                          uiOutput("plotui")
+                          
+                   )
+                 ),
+                 fluidRow(
+                   column(8,
+                          plotOutput("evento_marcado", width=800, height = 800)
+                   ),
+                   column(4,
+                          plotOutput("fit_plot1", width=400),        
+                          plotOutput("fit_plot2", width=400)
+                   )
+                   
+                   
+                 ),
+                 fluidRow(actionButton("mark_pattern", "Marca el patron")),
+                 
+                 fluidRow(
+                   
+                   plotOutput("plot_final", width=1250)
+                   
+                 )
+                 
+                 
+                 ,
+                 fluidRow(actionButton("save_raw", "Guarda el archivo")),
+                 
+                 value="manual"
+                 
         ),
-        column(4,
-        plotOutput("fit_plot1", width=400),        
-        plotOutput("fit_plot2", width=400)
-        )
-
+        tabPanel("CPA", 
+          
+      #breakpoint controls             #1plot of time series with breakpoints, zoomable w brush
+      #
+      #move selected breakpoints       #2zoom window with removeable breakpoints (dblclick)
+      #move y position of breakpoints  #select breakpoints to move
+                                       #add breakpoints (single click)
+      #generate fits from breakpoints
+      #fit controls (umbrals) #window that shows marked_rects
+                              #for each event, is slope negative -> fit off, positive -> fit on
+                 value="cpa"),
         
-      ),
-      fluidRow(actionButton("mark_pattern", "Marca el patron")),
+      selected = "manual", id="tabs")
       
-      fluidRow(
-        
-        plotOutput("plot_final", width=1250)
-        
-      )
-      
-      
-      ,
-      fluidRow(actionButton("save_raw", "Guarda el archivo"))
       
     )
   )

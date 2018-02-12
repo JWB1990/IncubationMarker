@@ -57,7 +57,7 @@ jsResetCode <- "shinyjs.reset = function() {history.go(0)}" # Define the js meth
 #3. proportional threshold
 #yes
 #4. record threshold used
-
+#useful?
 
 #6. works for all combinations of data present?
 #should work

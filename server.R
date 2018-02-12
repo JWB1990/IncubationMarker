@@ -113,6 +113,12 @@ shinyServer(function(input, output) {
     brushedPoints(bpts(), input$plot2_brush)
   })
   
+  #make reactive fit choice
+  output$fitcontrols <- renderUI({
+    avail<-names(datos_crudos())[names(datos_crudos()) %in% c("nido", "huevo")]
+    radioButtons("fit_selector", "Que fit quieres correr?",
+                 choices =  avail)
+  })
   
   
   T_amb_event <- reactive({
