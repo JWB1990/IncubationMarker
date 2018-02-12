@@ -16,27 +16,51 @@ shinyServer(function(input, output) {
   
   
   
-  datos_crudos <- reactive({
-    cru=read.csv(paste("hobo/", input$archivo, sep = ""), header = T, sep = ";", stringsAsFactors = F)
+  datos_crudos_pre <- reactive({
+    cru=read.csv(paste("hobo/", input$archivo, sep = ""), header = T, sep = input$sep, stringsAsFactors = F)
     cru$patron<-c(NA)
+    cru
+  })
+  
+  output$header<-renderPrint({
+    o=datos_crudos_pre()
+    rbind(names(o))
+  })
     
-      cru[,c("huevo", "nido", "amb")] <- apply(cru[,c("huevo", "nido", "amb")], 2, function(x){
-      as.numeric(gsub(x, pattern = ",", replacement = ".", fixed = T))
-    })
+    datos_crudos<-eventReactive(input$load, {
+        
+      
+      cru<-datos_crudos_pre()
+      if(input$col_fecha!=0){names(cru)[input$col_fecha]<-"fecha"}
+      if(input$col_hora!=0){names(cru)[input$col_hora]<-"hora"}
+      if(input$col_huevo!=0){names(cru)[input$col_huevo]<-"huevo"
+      as.numeric(gsub(cru$huevo, pattern = ",", replacement = ".", fixed = T))}
+      if(input$col_nido!=0){names(cru)[input$col_nido]<-"nido"
+      as.numeric(gsub(cru$nido, pattern = ",", replacement = ".", fixed = T))}
+      if(input$col_amb!=0){names(cru)[input$col_amb]<-"amb"
+      as.numeric(gsub(cru$amb, pattern = ",", replacement = ".", fixed = T))}
+      
+      
   #asegura que los formatos estan corectos  
   cru$ts<-parse_date_time(paste(cru$hora, cru$fecha), orders = c("HMS mdy", "HMS mdY"))
   cru
   })
+  observeEvent(input$load, {
+    isolate({
+      d<-datos_crudos()
+      empty_df<-d[-(1:nrow(d)),]
+      values$all_datos_marcados <-  empty_df #this is the empty data frame for nests with 2 sensors
+      
+    })
+  })  
+    # output$obs_raw<-renderDataTable({
+    #   head(values$all_datos_marcados)
+    #   })
   datos<-reactive({
   #cambia la tabla formato larga 
     datos_crudos() %>% gather("sensor", "temperatura", which(names(datos_crudos()) %in% c("huevo", "nido", "amb")))
   })
   
-  
-  # output$all_cols <- renderPrint({
-  #   f=datos()
-  #   names(f)
-  # })
   
   
  
@@ -45,9 +69,10 @@ shinyServer(function(input, output) {
   output$plot1 <- renderPlot({
     cr<-datos()
     ggplot(data=cr,
-           aes(x=ts, y=temperatura, colour=sensor))+geom_line()+scale_x_datetime(breaks = seq(floor_date(min(cr$ts), unit = "days"), 
-                                                                                              floor_date(max(cr$ts), unit = "days"), 
-                                                                                              by="12 hours"))
+           aes(x=ts, y=temperatura, colour=sensor))+geom_line()+
+      scale_x_datetime(breaks = seq(floor_date(min(cr$ts), unit = "days"),floor_date(max(cr$ts), unit = "days"), 
+                                                                                              by="12 hours"))+
+      ylim(input$ylim)
    
   })
   
@@ -66,7 +91,10 @@ shinyServer(function(input, output) {
     
     ggplot(data=bpts(),
            aes(x=ts, y=temperatura, colour=sensor))+geom_line()+
-      scale_x_datetime(breaks = date_breaks("15 min"), minor_breaks=date_breaks("1 min"), labels=date_format("%H:%M:%S"))
+      scale_x_datetime(breaks = date_breaks("15 min"), 
+                       minor_breaks=date_breaks("1 min"), labels=date_format("%H:%M:%S"))+
+      ylim(input$ylim)
+    
     
     
   })
@@ -114,16 +142,7 @@ shinyServer(function(input, output) {
        #T_s from mean amb temp
        data_to_fit<-data_to_fit() 
        
-         if(input$event_class=="3"){
-           d<-d[d$ts >= min_sel_event() & d$ts <= max_sel_event(),]
-           d$patron<-events[as.numeric(input$event_class)]    
-          
-           d$event_number<- 0
-           d$alpha<-0
-           d$T_s<-0
-                                                      # uyse this >
-           #this gives the right number of reps of each event
-         } else if(input$event_class=="2") {
+         if(input$event_class=="2") {
            
            
            
@@ -161,9 +180,10 @@ shinyServer(function(input, output) {
        d
   })
   
+
+    values<- reactiveValues()
+    
   #aca viven los datos crudos marcados
-  values<- reactiveValues()
-  values$all_datos_marcados <-  empty_with_both #this is the empty data frame for nests with 2 sensors
   
 
   new_entry<-observeEvent(input$mark_pattern, {
@@ -245,6 +265,27 @@ cool_newton_off<-reactive({
   buildModel(mFunction, mName, mFormula, mParams, mStarting)
 })
 
+cool_newton_off_noamb<-reactive({
+  mFunction = function(x, params) {
+    # params model parameters, 
+    a = params[["a"]]
+    T_s = params[["T_s"]]
+    
+    return( T_s - (T_s - max(y()))*exp(a*x))
+  }
+  # 2) Name
+  mName = "cool_newton_off_noamb"
+  # 3) Formula
+  mFormula = y ~ T_s - (T_s - max(y()))*exp(a*x)
+  # 4) Model parameters
+  mParams = c("a", "T_s")
+  # 5) List of starting values for the parameters
+  mStarting = list(a = input$init_newton_off_a,
+                   T_s=20)
+  # Create the customModel object
+  buildModel(mFunction, mName, mFormula, mParams, mStarting)
+})
+
 
 cool_newton_on<-reactive({
   mFunction = function(x, params) {
@@ -255,7 +296,7 @@ cool_newton_on<-reactive({
     return( T_s - (T_s - min(y()))*exp(a*x))
   }
   # 2) Name
-  mName = "cool_newton_off"
+  mName = "cool_newton_on"
   # 3) Formula
   mFormula = y ~ T_s - (T_s - min(y()))*exp(a*x)
   # 4) Model parameters
@@ -306,16 +347,16 @@ cool_newton_on<-reactive({
     models_off[["cool_newton_off"]] <- cool_newton_off()
     
     
-    # models_dbl = getModelLibrary()[c("linearFit")]
-    # models_dbl[["third_order_polynomial"]] <- third_order_polynomial()
-    # 
+    models_off_noamb = getModelLibrary()[c("linearFit")]
+    models_off_noamb[["cool_newton_off_noamb"]] <- cool_newton_off_noamb()
     
-    switch(input$event_class,
-           
-           "1"=  fitModels(models_off , x(), y()),
-           "2"=  fitModels(models_on , x(), y()),
-           "3"=  fitModels(models_dbl , x(), y())
-    )
+    if(input$event_class==2){
+      return(fitModels(models_on , x(), y()))
+    } else if(input$event_class==1 & input$col_amb!=0){
+        return(fitModels(models_off , x(), y()))
+    } else if(input$event_class==1 & input$col_amb==0){
+      return(fitModels(models_off_noamb , x(), y()))
+    }
     })
   
 ################ this determines the spot at which the threshold is reached
@@ -339,15 +380,18 @@ cool_newton_on<-reactive({
     
     
     if(input$event_class!="1"){0}
-    else{
-      
+    else if(input$col_amb!=0){
       fits<-fits()
       off_newton_pars<-fits$cool_newton_off$m$getAllPars()
-      
       a<-as.numeric(off_newton_pars[names(off_newton_pars)=="a"])
-      
       log((-input$umbral_off)/(T_amb_event()-max( y() )))/a
+    } else if(input$col_amb==0){
+      fits<-fits()
+      off_newton_pars<-fits$cool_newton_off_noamb$m$getAllPars()
+      a<-as.numeric(off_newton_pars[names(off_newton_pars)=="a"])
+      T_s<-as.numeric(off_newton_pars[names(off_newton_pars)=="T_s"])
       
+      log((-input$umbral_off)/(T_s-max( y() )))/a
     }
   })
 
@@ -443,6 +487,12 @@ if(input$mark_pattern==0){
   
   observeEvent(input$save_raw, {
     
+    saving_df<-values$all_datos_marcados
+    
+    ##
+    # make a thing that uses input$day_zero to get d since
+    ###
+    saving_df$day_since_laying<-yday(saving_df$ts)-yday(parse_date_time(as.character(date(input$day_zero)), orders = c("Ymd")))
     
     if (file.exists("result")){
       
@@ -450,10 +500,10 @@ if(input$mark_pattern==0){
       dir.create("result")
     }
     
-    write.csv(values$all_datos_marcados, 
+    write.csv(saving_df, 
               file = paste("result/marcado_", input$archivo, sep = "")
               )
-    
+    js$reset()
   })
   
 })

@@ -12,6 +12,9 @@
 ################################################
 
 shinyUI(fluidPage(
+  #for reset button
+  useShinyjs(),                                           # Include shinyjs in the UI
+  extendShinyjs(text = jsResetCode),                      # Add the js code to the page
   
   # Application title
   titlePanel("Temperatura"),
@@ -23,8 +26,27 @@ shinyUI(fluidPage(
        selectInput("archivo",
                    "Seleccione Archivo",
                    choices = archivos
-                   )
+                   )),
+      fluidRow(
+       radioButtons("sep", "Cual es el separador?", choices=c(",", ";"),
+                          selected=c(";"))
       ),
+      fluidRow(h3("Indice cual columna contiene cual informacion (0 si esta ausente)"),
+        box(width=12, title ="" , 
+             splitLayout(
+       numericInput("col_fecha", "Fecha", min=0, max=10, value = 1, width = '50px'),
+       numericInput("col_hora", "Hora", min=0, max=10, value = 2, width = '50px'),
+       numericInput("col_huevo", "Huevo", min=0, max=10, value = 3, width = '50px'),
+       numericInput("col_nido", "Nido", min=0, max=10, value = 4, width ='50px'),
+       numericInput("col_amb", "Ambiental", min=0, max=10, value = 5, width = '50px')
+       ))
+      ),
+      actionButton("load", "Carga los datos"),
+      dateInput("day_zero", "Cuando es el dia 0? (dejala vacio si desconocido)", value = NA),
+      fluidRow(
+       sliderInput("ylim", "Limite de Y", min=0, max=100, value = c(10,40))
+       )
+      ,
       HTML(
       rep(c("<br>" ,"</br>"),10)
       ),
@@ -33,7 +55,8 @@ shinyUI(fluidPage(
                     choiceNames =   events,
                     choiceValues = c(1:2)
                     )
-      ),
+      )
+      ,
       HTML(
         rep(c("<br>" ,"</br>"),10)
       ),
@@ -41,7 +64,8 @@ shinyUI(fluidPage(
         radioButtons("fit_selector", "Que fit quieres correr?",
                      choices =  c("nido", "huevo")
         )
-      ),
+      )
+      ,
       
       ###Init helper
       
@@ -65,24 +89,20 @@ shinyUI(fluidPage(
           numericInput("init_newton_on_T_s", "init_newton_on_T_s", 10, min=-10000, max=10000)
         ))
       #,
-      # #Only for Double Logistic
-      # conditionalPanel(
-      #   "input.event_class=='3'"
-      #   ,
-      #   fluidRow(
-      #     numericInput("init_logistic_dbl_A", "init_logistic_dbl_A", 10, min=-1000, max=1000),
-      #     numericInput("init_logistic_dbl_mu", "init_logistic_dbl_mu", 4, min=-10000, max=10000),
-      #     numericInput("init_logistic_dbl_lambda", "init_logistic_dbl_lambda", 2, min=-10000, max=10000)
-      #   ))
+    
       
       ),
       
     
     # Show a plot of the selected points
     mainPanel(
+      h3("La tabla cruda"),
+      
+      verbatimTextOutput("header"),
+      
        h3("La serie de tiempo"),
-      # textOutput("all_cols"),
-    
+      
+    #dataTableOutput("obs_raw"),
        
        plotOutput("plot1", width=1250,
                   brush = brushOpts(

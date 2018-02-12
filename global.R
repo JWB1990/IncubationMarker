@@ -20,6 +20,8 @@ library(ggplot2)
 library(lubridate)
 library(scales)
 library(shiny)
+library(shinydashboard)
+library(shinyjs)
 library(thermPerf)
 library(tidyr)
 
@@ -31,11 +33,9 @@ Sys.setenv(TZ='GMT')
 ##################
 # esencial
 ##################
-# meter los datos crudos en un archivo tipo .csv que usa ";" como separadores
 # en una carpeta que se llama "hobo"
 #>MarcaPatrones/hobo/archivo_1.csv
-# Ademas, asegurate que el argumento sep en server.R en la linea del read.csv() esta adecuado
-# Ademas, todo fallara si no hay columnas que se llaman "nido", "huevo" y "amb"
+# Ademas, todo fallara si no hay columnas que se llaman "nido", "huevo" y "amb" // "fecha", "hora"
 ##
 
 archivos <- list.files("hobo")[grep(list.files("hobo"), pattern = ".csv")]
@@ -45,18 +45,16 @@ palette <- c("yellow", "blue", "green", "red")
 events<-c("Off"  ,"On"   )
 
 
-empty_with_both<-data.frame("fecha"  =character(),
-                            "hora"   =character(),
-                            "huevo"  =numeric(),
-                            "nido"   =numeric(),
-                            "amb"   =numeric(),
-                            "evento" =character(),
-                            "X"      =character(),
-                            "ts"=as.POSIXct(character()), 
-                            "patron"=character(),
-                            "event_number"=numeric(), 
-                            "alpha"=numeric(),
-                            "T_s"=numeric(),
-                            
-                            stringsAsFactors = F)
 
+#####
+# features to add
+####
+#1. add your day 0 of development
+#reset collection/mapped events after save data
+jsResetCode <- "shinyjs.reset = function() {history.go(0)}" # Define the js method that resets the page
+
+#3. proportional threshold
+#4. record threshold used
+#5. dont record estimated ambient temp when not needed
+
+#6. works for all combinations of data present?
