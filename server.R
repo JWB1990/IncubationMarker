@@ -498,7 +498,9 @@ if(input$mark_pattern==0){
     ##
     # make a thing that uses input$day_zero to get d since
     ###
+    if(input$day_zero!=Sys.Date()){
     saving_df$day_since_laying<-yday(saving_df$ts)-yday(parse_date_time(as.character(date(input$day_zero)), orders = c("Ymd")))
+    } else {saving_df$day_since_laying<-NA}
     
     if (file.exists("result")){
       

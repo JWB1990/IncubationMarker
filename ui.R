@@ -42,7 +42,7 @@ shinyUI(fluidPage(
        ))
       ),
       actionButton("load", "Carga los datos"),
-      dateInput("day_zero", "Cuando es el dia 0? (dejala vacio si desconocido: yyyy-mm-dd)", value = NA),
+      dateInput("day_zero", "Cuando es el dia 0? (si es desconocido, usa el dia de hoy: yyyy-mm-dd)", value = Sys.Date()),
       fluidRow(
        sliderInput("ylim", "Limite de Y", min=0, max=100, value = c(10,40))
        )
