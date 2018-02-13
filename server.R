@@ -17,8 +17,12 @@ shinyServer(function(input, output) {
   
   
   datos_crudos_pre <- reactive({
-    cru=read.csv(paste("hobo/", input$archivo, sep = ""), header = T, sep = input$sep, stringsAsFactors = F)
+    cru=read.table(paste("hobo", "/", input$archivo, sep = ""), header = T, stringsAsFactors = F, row.names = NULL)
     cru$patron<-c(NA)
+    if("row.names" %in% names(cru)){
+      names(cru)<-c(names(cru)[2:ncol(cru)], paste0("X", ncol(cru)))
+    }
+  
     cru
   })
   
@@ -40,6 +44,7 @@ shinyServer(function(input, output) {
       if(input$col_amb!=0){names(cru)[input$col_amb]<-"amb"
       cru$amb<-as.numeric(gsub(cru$amb, pattern = ",", replacement = ".", fixed = T))}
       
+      cru$hora<-substr(cru$hora, 1, 8)
       
   #asegura que los formatos estan corectos  
   cru$ts<-parse_date_time(paste(cru$hora, cru$fecha), orders = c("HMS mdy", "HMS mdY"))

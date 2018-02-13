@@ -22,15 +22,17 @@ shinyUI(fluidPage(
   # Sidebar with a file selector
   sidebarLayout(
     sidebarPanel(
+      
+      # fluidRow(
+      #   radioButtons("src_os", "Cual carpeta?", choices=c("windows", "mac"),
+      #                selected=c("windows"), label = c("Windows", "Mac"))
+      # ),
       fluidRow(
        selectInput("archivo",
                    "Seleccione Archivo",
                    choices = archivos
                    )),
-      fluidRow(
-       radioButtons("sep", "Cual es el separador?", choices=c(",", ";"),
-                          selected=c(";"))
-      ),
+      
       fluidRow(h3("Indice cual columna contiene cual informacion (0 si esta ausente)"),
         box(width=12, title ="" , 
              splitLayout(

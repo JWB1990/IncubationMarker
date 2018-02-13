@@ -39,7 +39,7 @@ Sys.setenv(TZ='GMT')
 # Ademas, todo fallara si no hay columnas que se llaman "nido", "huevo" y "amb" // "fecha", "hora"
 ##
 
-archivos <- list.files("hobo")[grep(list.files("hobo"), pattern = ".csv")]
+archivos <- list.files("hobo")[grep(list.files("hobo"), pattern = ".txt")]
 
 palette <- c("yellow", "blue", "green", "red")
 
