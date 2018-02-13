@@ -77,7 +77,7 @@ shinyServer(function(input, output) {
            aes(x=ts, y=temperatura, colour=sensor))+geom_line()+
       scale_x_datetime(breaks = seq(floor_date(min(cr$ts), unit = "days"),floor_date(max(cr$ts), unit = "days"), 
                                                                                               by="12 hours"))+
-      ylim(input$ylim)
+      ylim(input$ylim)+theme(legend.position="left")
    
   })
   
@@ -558,7 +558,7 @@ if(input$mark_pattern==0){
            aes(x=ts, y=temperatura))+geom_line(aes(colour=sensor))+
       scale_x_datetime(breaks = seq(floor_date(min(cr$ts), unit = "days"),floor_date(max(cr$ts), unit = "days"), 
                                     by="12 hours"))+
-      ylim(input$ylim)+geom_point(data=cpa_pts1(), aes(x=ts, y=temperatura))
+      ylim(input$ylim)+geom_point(data=cpa_pts1(), aes(x=ts, y=temperatura))+theme(legend.position="left")
     
   })
   
