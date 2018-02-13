@@ -77,19 +77,17 @@ conditionalPanel(condition="input.tabs=='manual'",
         "input.event_class=='1' && input.tabs=='manual'"
         ,
         fluidRow(
-          numericInput("umbral_off", "umbral_off", 0.1, min=0, max=3),
-          
-          numericInput("init_newton_off_a", "init_newton_off_a", -0.5, min=-1000, max=1000)
+          numericInput("umbral_off", "umbral_off", 10, min=0, max=100)
+          #,numericInput("init_newton_off_a", "init_newton_off_a", -0.5, min=-1000, max=1000)
           ))
       ,
       conditionalPanel(
         "input.event_class=='2'&& input.tabs=='manual'"
         ,
         fluidRow(
-          numericInput("umbral_on", "umbral_on", 0.1, min=0, max=3),
-          
-          numericInput("init_newton_on_a", "init_newton_on_a", -0.7, min=-1000, max=1000),
-          numericInput("init_newton_on_T_s", "init_newton_on_T_s", 10, min=-10000, max=10000)
+          numericInput("umbral_on", "umbral_on", 10, min=0, max=100)
+          # ,numericInput("init_newton_on_a", "init_newton_on_a", -0.7, min=-1000, max=1000),
+          # numericInput("init_newton_on_T_s", "init_newton_on_T_s", 10, min=-10000, max=10000)
         ))
       #,
     
@@ -141,10 +139,10 @@ conditionalPanel(condition="input.tabs=='cpa'",
                  ),
                  fluidRow(
                    column(8,
-                          plotOutput("evento_marcado", width=800, height = 800)
+                          plotOutput("fit_plot1", width=800, height = 800)
                    ),
                    column(4,
-                          plotOutput("fit_plot1", width=400),        
+                          plotOutput("evento_marcado", width=400),        
                           plotOutput("fit_plot2", width=400)
                    )
                    

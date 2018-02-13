@@ -12,11 +12,21 @@
 ################################################
 
 
+
+list.of.packages <- c("changepoint", "devtools", "dplyr", "ggplot2", "lubridate", "scales", "shiny", "shinydashboard", "shinyjs", "tidyr", "zoo")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+if(!require(thermPerf)){
+  install_github("mdjbru-R-packages/thermPerf")
+}
+
+
+
 library(changepoint)
 library(devtools)
 library(dplyr)
 library(ggplot2)
-#install_github("mdjbru-R-packages/thermPerf")
 library(lubridate)
 library(scales)
 library(shiny)

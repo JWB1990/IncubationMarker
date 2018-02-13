@@ -231,7 +231,7 @@ shinyServer(function(input, output) {
     ggplot()+geom_point(data=bpts2() %>% filter(sensor==input$fit_selector),
                         aes(x=ts, y=temperatura, colour=sensor), size=4)+
       geom_point(data=bpts2() %>% filter(sensor!=input$fit_selector),
-                 aes(x=ts, y=temperatura, colour=sensor), alpha=0.1, size=2)
+                 aes(x=ts, y=temperatura, colour=sensor), alpha=0.6, size=2)
        
     
 
@@ -271,7 +271,7 @@ cool_newton_off<-reactive({
   # 4) Model parameters
   mParams = c("a")
   # 5) List of starting values for the parameters
-  mStarting = list(a = input$init_newton_off_a)
+  mStarting = list(a = -0.5)
   # Create the customModel object
   buildModel(mFunction, mName, mFormula, mParams, mStarting)
 })
@@ -291,7 +291,7 @@ cool_newton_off_noamb<-reactive({
   # 4) Model parameters
   mParams = c("a", "T_s")
   # 5) List of starting values for the parameters
-  mStarting = list(a = input$init_newton_off_a,
+  mStarting = list(a = -0.5,
                    T_s=20)
   # Create the customModel object
   buildModel(mFunction, mName, mFormula, mParams, mStarting)
@@ -313,52 +313,118 @@ cool_newton_on<-reactive({
   # 4) Model parameters
   mParams = c("a", "T_s")
   # 5) List of starting values for the parameters
-  mStarting = list(a = input$init_newton_on_a, 
-                   T_s=input$init_newton_on_T_s)
+  mStarting = list(a = -0.7, 
+                   T_s=10)
   # Create the customModel object
   buildModel(mFunction, mName, mFormula, mParams, mStarting)
 })
 
 
-# 
-# third_order_polynomial<-reactive({
-#   
-# 
-# mFunction = function(x, params) {
-#   # params model parameters, a0, a1, a2, a3
-#   a0 = params[["a0"]]
-#   a1 = params[["a1"]]
-#   a2 = params[["a2"]]
-#   a3 = params[["a3"]]
-#   return(a0 + a1 * x + a2 * x^2 + a3 * x^3)
-# }
-# # 2) Name
-# mName = "3rd-order polynomial"
-# # 3) Formula
-# mFormula = y ~ a0 + a1 * x + a2 * x^2 + a3 * x^3
-# # 4) Model parameters
-# mParams = c("a0", "a1", "a2", "a3")
-# # 5) List of starting values for the parameters
-# mStarting = list(a0 = 0, a1 = 1, a2 = 0.5, a3 = 0.1)
-# # Create the customModel object
-# buildModel(mFunction, mName, mFormula, mParams, mStarting)
-# })
+O2_poly_on<-reactive({
+mFunction = function(x, params) {
+  # params model parameters, a1, a2
+  a1 = params[["a1"]]
+  a2 = params[["a2"]]
+  return(a1 * x + a2 * x^2)
+}
+# 2) Name
+mName = "2nd-order polynomial-on"
+# 3) Formula
+mFormula = y ~ a1 * x + a2 * x^2
+# 4) Model parameters
+mParams = c("a1", "a2")
+# 5) List of starting values for the parameters
+mStarting = list(a1 = 1, a2 = 0.5)
+# Create the customModel object
+buildModel(mFunction, mName, mFormula, mParams, mStarting)
+})
+
+
+O3_poly_on<-reactive({
+  mFunction = function(x, params) {
+    # params model parameters, a1, a2, a3
+    a1 = params[["a1"]]
+    a2 = params[["a2"]]
+    a3 = params[["a3"]]
+    
+    return(a1 * x + a2 * x^2+a3 * x^3)
+    
+  }
+  # 2) Name
+  mName = "3rd-order polynomial-on"
+  # 3) Formula
+  mFormula = y ~ a1 * x + a2 * x^2+ a3 * x^3
+  # 4) Model parameters
+  mParams = c("a1", "a2", "a3")
+  # 5) List of starting values for the parameters
+  mStarting = list(a1 = 1, a2 = 0.5, a3=0.5)
+  # Create the customModel object
+  buildModel(mFunction, mName, mFormula, mParams, mStarting)
+})
+
+O2_poly_off<-reactive({
+  mFunction = function(x, params) {
+    # params model parameters, a1, a2
+    a1 = params[["a1"]]
+    a2 = params[["a2"]]
+    return(max(y())+a1 * x + a2 * x^2)
+  }
+  # 2) Name
+  mName = "2nd-order polynomial-off"
+  # 3) Formula
+  mFormula = y ~ max(y())+a1 * x + a2 * x^2
+  # 4) Model parameters
+  mParams = c("a1", "a2")
+  # 5) List of starting values for the parameters
+  mStarting = list(a1 = 1, a2 = 0.5)
+  # Create the customModel object
+  buildModel(mFunction, mName, mFormula, mParams, mStarting)
+})
+
+
+O3_poly_off<-reactive({
+  mFunction = function(x, params) {
+    # params model parameters, a1, a2, a3
+    a1 = params[["a1"]]
+    a2 = params[["a2"]]
+    a3 = params[["a3"]]
+    
+    return(max(y())+a1 * x + a2 * x^2+a3 * x^3)
+    
+  }
+  # 2) Name
+  mName = "3rd-order polynomial-off"
+  # 3) Formula
+  mFormula = y ~ max(y())+a1 * x + a2 * x^2+ a3 * x^3
+  # 4) Model parameters
+  mParams = c("a1", "a2", "a3")
+  # 5) List of starting values for the parameters
+  mStarting = list(a1 = 1, a2 = 0.5, a3=0.5)
+  # Create the customModel object
+  buildModel(mFunction, mName, mFormula, mParams, mStarting)
+})
+
 
   fits<-reactive({
     
     ##################
     #define subsets of models to be run with switch
     models_on = getModelLibrary()[c("linearFit")]
-    #models_on[["third_order_polynomial"]] <- third_order_polynomial()
+    models_on[["O2_poly_on"]] <- O2_poly_on()
+    models_on[["O3_poly_on"]] <- O3_poly_on()
     models_on[["cool_newton_on"]] <- cool_newton_on() 
     
     
+    
     models_off = getModelLibrary()[c("linearFit")]
-    #models_off[["third_order_polynomial"]] <- third_order_polynomial()
+    models_off[["O2_poly_off"]] <- O2_poly_off()
+    models_off[["O3_poly_off"]] <- O3_poly_off()
     models_off[["cool_newton_off"]] <- cool_newton_off()
     
     
     models_off_noamb = getModelLibrary()[c("linearFit")]
+    models_off[["O2_poly_off"]] <- O2_poly_off()
+    models_off[["O3_poly_off"]] <- O3_poly_off()
     models_off_noamb[["cool_newton_off_noamb"]] <- cool_newton_off_noamb()
     
     if(input$event_class==2){
@@ -382,7 +448,7 @@ cool_newton_on<-reactive({
       T_s<-as.numeric(on_newton_pars[names(on_newton_pars)=="T_s"])
       a<-as.numeric(on_newton_pars[names(on_newton_pars)=="a"])
       
-      log((input$umbral_on*T_s)/(T_s-0))/a
+      log((input$umbral_on/100*T_s)/(T_s-0))/a
 
     }
   })
@@ -395,14 +461,14 @@ cool_newton_on<-reactive({
       fits<-fits()
       off_newton_pars<-fits$cool_newton_off$m$getAllPars()
       a<-as.numeric(off_newton_pars[names(off_newton_pars)=="a"])
-      log((-input$umbral_off*max(y()))/(T_amb_event()-max( y() )))/a
+      log((-input$umbral_off/100*max(y()))/(T_amb_event()-max( y() )))/a
     } else if(input$col_amb==0){
       fits<-fits()
       off_newton_pars<-fits$cool_newton_off_noamb$m$getAllPars()
       a<-as.numeric(off_newton_pars[names(off_newton_pars)=="a"])
       T_s<-as.numeric(off_newton_pars[names(off_newton_pars)=="T_s"])
       
-      log((-input$umbral_off*max(y()))/(T_s-max( y() )))/a
+      log((-input$umbral_off/100*max(y()))/(T_s-max( y() )))/a
     }
   })
 
@@ -471,7 +537,7 @@ if(input$mark_pattern==0){
                             aes(x=ts, y=temperatura, colour=sensor))+scale_x_datetime(breaks = seq(floor_date(min2, unit = "days"), 
                                                                                                    floor_date(max2, unit = "days"), 
                                                                                                    by="12 hours"))+ 
-        geom_rect(data=mr, aes(xmin=start-30, xmax=end+30, ymin=-Inf, ymax=Inf, fill=patron), alpha=0.2)+
+        geom_rect(data=mr, aes(xmin=start-30, xmax=end+30, ymin=-Inf, ymax=Inf, fill=patron), alpha=0.4)+
         scale_fill_manual(values=palette)
       
  }
