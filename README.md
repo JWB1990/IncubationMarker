@@ -22,12 +22,12 @@ screenshot, do this not that
 Explain what these tests test and why
 
 ```
-Give an example
+show what it does
 ```
 
 ## Built With
 
-* [Shiny](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
+* [Shiny](https://shiny.rstudio.com/)
 
 ## Authors
 
