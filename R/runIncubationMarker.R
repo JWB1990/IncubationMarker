@@ -8,5 +8,11 @@
 #' runIncubationMarker()
 
 runIncubationMarker<-function(){
-  runApp("IncubationMarker")
+
+  appDir <- system.file("IncubationMarker", package = "IncubationMarker")
+  if (appDir == "") {
+    stop("Could not find app directory. Try re-installing `IncubationMarker`.", call. = FALSE)
+  }
+
+  shiny::runApp(appDir, display.mode = "normal")
 }
