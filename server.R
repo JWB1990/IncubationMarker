@@ -423,8 +423,8 @@ O3_poly_off<-reactive({
     
     
     models_off_noamb = getModelLibrary()[c("linearFit")]
-    models_off[["O2_poly_off"]] <- O2_poly_off()
-    models_off[["O3_poly_off"]] <- O3_poly_off()
+    models_off_noamb[["O2_poly_off"]] <- O2_poly_off()
+    models_off_noamb[["O3_poly_off"]] <- O3_poly_off()
     models_off_noamb[["cool_newton_off_noamb"]] <- cool_newton_off_noamb()
     
     if(input$event_class==2){
@@ -474,9 +474,14 @@ O3_poly_off<-reactive({
 
   #this plots the fits
   output$fit_plot1 <- renderPlot({
+    fs<-fits()
+    all_converged<-all(sapply(fs[-length(fs)], FUN=function(x){x$convInfo$isConv}))
+    validate(need(all_converged==T, "Unas curvas no convergieron. Evento correcto?"))
+    #make this better 
+    #use singluar gradient estimate warning
+    #make the points toggleable
     
-    if(input$event_class=="3"){plot(fits())} 
-    else if(input$event_class=="2"){
+    if(input$event_class=="2"){
       plot(fits())
       abline(v=t_at_half_from_T_s_on(), lty=2)
     } else {
