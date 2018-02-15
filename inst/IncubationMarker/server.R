@@ -199,24 +199,15 @@ shinyServer(function(input, output) {
 
 
     values<- reactiveValues()
-    values$events<-c("Off","On")
-    values$event_values<-c(1,2)
+    values$event_values<-1
 
-    output$event_class_control <- renderUI({
-      radioButtons("event_class", "Cual tipo de evento es?",
-                   choiceNames =   values$events,
-                   choiceValues = values$event_values, selected = values$event_values[1]
-      )
-    })
-
-    #
-    # reactivevalue for input$event_class
-    evt_class<-reactive({input$event_class})
-    evt_class_end<-reactive({evt_class()})
-
+    evt_class<-reactive({values$event_values})
+    evt_class_end<-reactive({(evt_class()+input$switch_event)%%2+1})
+    output$monitor_evt_class<-renderText({ifelse(evt_class_end()==1, off_text, on_text)})
     #
 
-  #aca viven los datos crudos marcados
+output$event_class<-reactive({event_class_end()})
+outputOptions(output, "event_class", suspendWhenHidden = FALSE)
 
 
   new_entry<-observeEvent(input$mark_pattern, {
@@ -234,8 +225,7 @@ shinyServer(function(input, output) {
     values$all_datos_marcados <- res
 
     ###################################now update evt_class
-    #evt_class()
-    #yields evt_class_end()
+    values$event_values<-values$event_values+input$mark_pattern
 
   })
 

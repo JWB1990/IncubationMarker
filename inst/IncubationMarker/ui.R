@@ -51,7 +51,9 @@ conditionalPanel(condition="input.tabs=='manual'",
       rep(c("<br>" ,"</br>"),10)
       ),
       fluidRow(#replacewith dynamic ui
-        uiOutput("event_class_control")
+        #uiOutput("event_class_control")
+        actionButton("switch_event", "Cambia el evento marcado"),
+        verbatimTextOutput("monitor_evt_class")
 
       )
       ,
@@ -69,7 +71,7 @@ conditionalPanel(condition="input.tabs=='manual'",
 
 
       conditionalPanel(
-        "input.event_class=='1' && input.tabs=='manual'"
+        "output.event_class=='1' && input.tabs=='manual'"
         ,
         fluidRow(
 
@@ -83,7 +85,7 @@ conditionalPanel(condition="input.tabs=='manual'",
           ))
       ,
       conditionalPanel(
-        "input.event_class=='2'&& input.tabs=='manual'"
+        "output.event_class=='2'&& input.tabs=='manual'"
         ,
         fluidRow(
 
