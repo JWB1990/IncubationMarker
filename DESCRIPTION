@@ -1,7 +1,9 @@
 Package: IncubationMarker
 Title: Shiny app for bird incubation data (HOBO)
 Version: 0.0.0.9000
-Authors@R: person("Justin", "Baldwin", email = "justin.wheeler.baldwin@gmail.com", role = c("aut", "cre"))
+Authors@R: c(
+    person("Justin", "Baldwin", email = "justin.wheeler.baldwin@gmail.com", role = c("aut", "cre")),
+    person("Mario", "Loaiza-Muñoz", email = "loaizamunoz01@gmail.com", role = c("ctb")))
 Description: This is an R package that contains a Shiny app to annotate 
     time series of bird incubation data (egg, nest and ambient sensors) 
     from HOBO data loggers made for the Londoño lab at the Icesi 

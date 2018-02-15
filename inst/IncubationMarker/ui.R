@@ -1,5 +1,5 @@
 ################################################
-# Proyecto: MarcaPatrones                      #  
+# Proyecto: MarcaPatrones                      #
 #           Herramiento para manualmente       #
 #           marcar eventos de incubacion       #
 #           con series de tiempo               #
@@ -15,26 +15,23 @@ shinyUI(fluidPage(
   #for reset button
   useShinyjs(),                                           # Include shinyjs in the UI
   extendShinyjs(text = jsResetCode),                      # Add the js code to the page
-  
+
   # Application title
   titlePanel("Temperatura"),
-  
+
   # Sidebar with a file selector
   sidebarLayout(
     sidebarPanel(
-      
-      # fluidRow(
-      #   radioButtons("src_os", "Cual carpeta?", choices=c("windows", "mac"),
-      #                selected=c("windows"), label = c("Windows", "Mac"))
-      # ),
+
+
       fluidRow(
        selectInput("archivo",
                    "Seleccione Archivo",
                    choices = archivos
                    )),
-      
+
       fluidRow(h3("Indice cual columna contiene cual informacion (0 si esta ausente)"),
-        box(width=12, title ="" , 
+        box(width=12, title ="" ,
              splitLayout(
        numericInput("col_fecha", "Fecha", min=0, max=10, value = 1, width = '50px'),
        numericInput("col_hora", "Hora", min=0, max=10, value = 2, width = '50px'),
@@ -53,11 +50,9 @@ conditionalPanel(condition="input.tabs=='manual'",
       HTML(
       rep(c("<br>" ,"</br>"),10)
       ),
-      fluidRow(
-       radioButtons("event_class", "Cual tipo de evento es?",
-                    choiceNames =   events,
-                    choiceValues = c(1:2)
-                    )
+      fluidRow(#replacewith dynamic ui
+        uiOutput("event_class_control")
+
       )
       ,
       HTML(
@@ -65,32 +60,41 @@ conditionalPanel(condition="input.tabs=='manual'",
       ),
       fluidRow(
         uiOutput("fitcontrols")
-        
+
         )
-      
+
       ,
-      
+
       ###Init helper
-      
-      
+
+
       conditionalPanel(
         "input.event_class=='1' && input.tabs=='manual'"
         ,
         fluidRow(
-          numericInput("umbral_off", "umbral_off", 10, min=0, max=100)
-          #,numericInput("init_newton_off_a", "init_newton_off_a", -0.5, min=-1000, max=1000)
+
+          checkboxGroupInput("off_models", "Cuales modelos quieres correr?",choiceValues = models, choiceNames = models_labels, selected = models),
+
+
+          numericInput("umbral_off", "Umbral off", 10, min=0, max=100)
+          ,numericInput("init_newton_off_a", "Initial parameter a", -0.5, min=-10, max=10),
+          numericInput("init_newton_off_T_s", "Initial parameter T_s", 10, min=--10, max=50)
+
           ))
       ,
       conditionalPanel(
         "input.event_class=='2'&& input.tabs=='manual'"
         ,
         fluidRow(
-          numericInput("umbral_on", "umbral_on", 10, min=0, max=100)
-          # ,numericInput("init_newton_on_a", "init_newton_on_a", -0.7, min=-1000, max=1000),
-          # numericInput("init_newton_on_T_s", "init_newton_on_T_s", 10, min=-10000, max=10000)
+
+          checkboxGroupInput("on_models", "Cuales modelos quieres correr?",choiceValues = models, choiceNames = models_labels, selected = models),
+
+          numericInput("umbral_on","Umbral On",  10, min=0, max=100)
+           ,numericInput("init_newton_on_a", "Initial parameter a", -0.7, min=-10, max=10),
+           numericInput("init_newton_on_T_s", "Initial parameter T_s", 10, min=--10, max=50)
         ))
       #,
-    
+
 ),
 
 conditionalPanel(condition="input.tabs=='cpa'",
@@ -105,71 +109,71 @@ conditionalPanel(condition="input.tabs=='cpa'",
                  #generate fits from breakpoints
                  #fit controls (umbrals) #window that shows marked_rects
                  #for each event, is slope negative -> fit off, positive -> fit on
-                 
+
                  )
       ),
-      
-    
+
+
     # Show a plot of the selected points
     mainPanel(
       tabsetPanel(
-       
-        
+
+
         tabPanel("Manual",
-                 
+
                  h3("La tabla cruda"),
-                 
+
                  verbatimTextOutput("header"),
-                 
+
                  h3("La serie de tiempo"),
                  #dataTableOutput("obs_raw"),
-                 
+
                  plotOutput("plot1", width=1250,
                             brush = brushOpts(
                               id = "plot1_brush", direction = "x"
                             )),
-                 
+
                  fluidRow(
                    column(width=12,
-                          
+
                           h3("Seleccione el tipo y marca un evento"),
                           uiOutput("plotui")
-                          
+
                    )
                  ),
                  fluidRow(
-                   column(8,
-                          plotOutput("fit_plot1", width=800, height = 800)
+                   column(6,
+                          plotOutput("fit_plot1", width=600, height = 600)
                    ),
-                   column(4,
-                          plotOutput("evento_marcado", width=400),        
-                          plotOutput("fit_plot2", width=400)
+                   column(6,
+                          plotOutput("evento_marcado", width=500, height = 300),
+                          plotOutput("fit_plot2", width=500, height = 300)
                    )
-                   
-                   
+
+
                  ),
                  fluidRow(actionButton("mark_pattern", "Marca el patron")),
-                 
+
                  fluidRow(
-                   
+
                    plotOutput("plot_final", width=1250)
-                   
+
                  )
-                 
-                 
+
+
                  ,
                  fluidRow(actionButton("save_raw", "Guarda el archivo")),
-                 
+
                  value="manual"
-                 
+
         ),
-        tabPanel("CPA", 
+        tabPanel("CPA",
                  h3("La tabla cruda"),
-                 
+
                  verbatimTextOutput("header_cpa"),
-                 
+
                  h3("La serie de tiempo"),
-                 
+
           plotOutput("cpa_plot1"),
       #breakpoint controls             #1plot of time series with breakpoints, zoomable w brush
       #
@@ -180,10 +184,10 @@ conditionalPanel(condition="input.tabs=='cpa'",
       #fit controls (umbrals) #window that shows marked_rects
                               #for each event, is slope negative -> fit off, positive -> fit on
                  value="cpa"),
-        
+
       selected = "manual", id="tabs")
-      
-      
+
+
     )
   )
 ))
