@@ -41,7 +41,7 @@ shinyUI(fluidPage(
        ))
       ),
       actionButton("load", "Carga los datos"),
-      dateInput("day_zero", "Cuando es el dia 0? (si es desconocido, usa el dia de hoy: yyyy-mm-dd)", value = Sys.Date()),
+
       fluidRow(
        sliderInput("ylim", "Limite de Y", min=0, max=100, value = c(10,40))
        )
@@ -51,7 +51,7 @@ conditionalPanel(condition="input.tabs=='manual'",
       rep(c("<br>" ,"</br>"),10)
       ),
       fluidRow(#replacewith dynamic ui
-        #uiOutput("event_class_control")
+        #uiOutput("event_class_control"),
         actionButton("switch_event", "Cambia el evento marcado"),
         verbatimTextOutput("monitor_evt_class")
 
@@ -63,9 +63,9 @@ conditionalPanel(condition="input.tabs=='manual'",
       fluidRow(
         uiOutput("fitcontrols")
 
-        )
+        ),
 
-      ,
+
 
       ###Init helper
 
@@ -98,7 +98,7 @@ conditionalPanel(condition="input.tabs=='manual'",
       #,
 
 ),
-
+########################################################################################################################################################
 conditionalPanel(condition="input.tabs=='cpa'",
                  uiOutput("fitcontrols_cpa"),
                  numericInput("movingaverage_width", "Ventana del Promedio", value = 10, min = 1,max=500),
@@ -112,9 +112,17 @@ conditionalPanel(condition="input.tabs=='cpa'",
                  #fit controls (umbrals) #window that shows marked_rects
                  #for each event, is slope negative -> fit off, positive -> fit on
 
-                 )
+                 ),
+HTML(
+  rep(c("<br>" ,"</br>"),10)
+),
+
+dateInput("day_zero", "Cuando es el dia 0? (si es desconocido dejalo vacio)", value = NA)
       ),
 
+########################################################################################################################################################
+########################################################################################################################################################
+########################################################################################################################################################
 
     # Show a plot of the selected points
     mainPanel(
@@ -164,11 +172,23 @@ conditionalPanel(condition="input.tabs=='cpa'",
 
 
                  ,
-                 fluidRow(actionButton("save_raw", "Guarda el archivo")),
+                 fluidRow(column(10,
+                                 actionButton("pre_save_raw", "Guardar para reanudar ahorita"),
+                                 fileInput("pre_saved_file", "Seleccional archivo",
+                                           accept = c("txt")
+                                 ),
+                                 actionButton("resume", "Reanudar"),
+                                 fluidRow(HTML("El ultimo evento marcado termino a las"),textOutput("final_loaded_ts"))),
+                          column(2,
+                          actionButton("save_raw", "Guarda el archivo final"))),
+                 fluidRow(verbatimTextOutput("monitor_preloaded")),
+
+
 
                  value="manual"
 
         ),
+        ###############################################################################################
         tabPanel("CPA",
                  h3("La tabla cruda"),
 

@@ -14,6 +14,7 @@
 
 shinyServer(function(input, output) {
 
+  values<- reactiveValues()
 
 
   datos_crudos_pre <- reactive({
@@ -98,7 +99,7 @@ shinyServer(function(input, output) {
            aes(x=ts, y=temperatura, colour=sensor))+geom_line()+geom_point()+
       scale_x_datetime(breaks = date_breaks("15 min"),
                        minor_breaks=date_breaks("1 min"), labels=date_format("%H:%M:%S"))+
-      ylim(input$ylim)
+      ylim(input$ylim)+theme(legend.position="left")
 
 
 
@@ -111,7 +112,7 @@ shinyServer(function(input, output) {
     )
   })
 
-  bpts2 <- reactive({
+  values$bpts2 <- reactive({
     validate(
       need(is.null(input$plot2_brush) == FALSE, "Selecciona un evento")
     )
@@ -127,7 +128,7 @@ shinyServer(function(input, output) {
 
 
   T_amb_event <- reactive({
-    selpoints<-bpts2()
+    selpoints<-values$bpts2()
 
     data_to_fit<-data_to_fit()
     mean(selpoints$temperatura[selpoints$sensor=="amb"], na.rm = T)-min(data_to_fit$temperatura)
@@ -135,11 +136,11 @@ shinyServer(function(input, output) {
   })
 
   min_sel_event<-reactive({
-    m<-bpts2()
+    m<-values$bpts2()
     min(m$ts)
   })
   max_sel_event<-reactive({
-    n<-bpts2()
+    n<-values$bpts2()
     max(n$ts)
   })
 
@@ -198,7 +199,6 @@ shinyServer(function(input, output) {
   })
 
 
-    values<- reactiveValues()
     values$event_values<-1
 
     evt_class<-reactive({values$event_values})
@@ -206,7 +206,7 @@ shinyServer(function(input, output) {
     output$monitor_evt_class<-renderText({ifelse(evt_class_end()==1, off_text, on_text)})
     #
 
-output$event_class<-reactive({event_class_end()})
+output$event_class<-reactive({as.numeric(evt_class_end())})
 outputOptions(output, "event_class", suspendWhenHidden = FALSE)
 
 
@@ -226,28 +226,32 @@ outputOptions(output, "event_class", suspendWhenHidden = FALSE)
 
     ###################################now update evt_class
     values$event_values<-values$event_values+input$mark_pattern
-
+    ###################################and scoot bpts to clip LHS selected frame
+    #values$bpts()<-
   })
 
   marked_rects<-reactive({
 
-    values$all_datos_marcados$event_number <-   rep(seq_along(rle(values$all_datos_marcados$patron)$lengths),
-                                                    rle(values$all_datos_marcados$patron)$lengths)
+  values$all_datos_marcados$event_number <-   rep(seq_along(rle(values$all_datos_marcados$patron)$lengths),
+                                                  rle(values$all_datos_marcados$patron)$lengths)
 
-    values$all_datos_marcados %>%
+  values$all_datos_marcados %>%
     group_by(event_number) %>% summarise(start=min(ts),
                                          end=max(ts),
                                          patron=patron[1],
                                          temperatura=20,
                                          sensor="nido")
+
+
+
   })
 
   #
   output$evento_marcado <- renderPlot({
 
-    ggplot()+geom_point(data=bpts2() %>% filter(sensor==input$fit_selector),
+    ggplot()+geom_point(data=values$bpts2() %>% filter(sensor==input$fit_selector),
                         aes(x=ts, y=temperatura, colour=sensor), size=4)+
-      geom_point(data=bpts2() %>% filter(sensor!=input$fit_selector),
+      geom_point(data=values$bpts2() %>% filter(sensor!=input$fit_selector),
                  aes(x=ts, y=temperatura, colour=sensor), alpha=0.6, size=2)
 
 
@@ -258,7 +262,7 @@ outputOptions(output, "event_class", suspendWhenHidden = FALSE)
   ############################################################ fits ################################################################
 
   data_to_fit<-reactive({
-    bpts2() %>% filter(sensor==input$fit_selector)
+    values$bpts2() %>% filter(sensor==input$fit_selector)
   })
 
   #normalize x and y to start at zero
@@ -559,7 +563,7 @@ O3_poly_off<-reactive({
   output$plot_final <- renderPlot({
 
     validate(
-      need(is.null(datos_marcados()) == FALSE & nrow(marked_rects())>0, "Selecciona y marca un evento")
+      need( nrow(values$all_datos_marcados)>0, "Selecciona y marca un evento")
     )
 
 
@@ -570,11 +574,9 @@ O3_poly_off<-reactive({
 
     #do sth to this
 
-if(input$mark_pattern==0){
+if(nrow(marked_rects())==0){
   p<-   ggplot(data=points_final,
-           aes(x=ts, y=temperatura, colour=sensor))+geom_line()+scale_x_datetime(breaks = seq(floor_date(min2, unit = "days"),
-                                                                                              floor_date(max2, unit = "days"),
-                                                                                              by="12 hours"))
+           aes(x=ts, y=temperatura, colour=sensor))+geom_line()
 }
     #add the shapes
  else{
@@ -583,17 +585,16 @@ if(input$mark_pattern==0){
 
 
       p<-ggplot()+geom_line(data=points_final,
-                            aes(x=ts, y=temperatura, colour=sensor))+scale_x_datetime(breaks = seq(floor_date(min2, unit = "days"),
-                                                                                                   floor_date(max2, unit = "days"),
-                                                                                                   by="12 hours"))+
+                            aes(x=ts, y=temperatura, colour=sensor))+
         geom_rect(data=mr, aes(xmin=start-30, xmax=end+30, ymin=-Inf, ymax=Inf, fill=patron), alpha=0.4)+
         scale_fill_manual(values=palette)
 
  }
 
 
-    p
-
+    p+theme(legend.position="left")#+scale_x_datetime(breaks = seq(floor_date(min2, unit = "days"),ceiling_date(max2, unit = "days"),by="1 hour"))
+    #scale_x_datetime(breaks = date_breaks("12 hours"),
+    #                 minor_breaks=date_breaks("1 hour"), labels=date_format("%Y:%m:%d %H:%M"))
   })
 
   # #check
@@ -618,7 +619,7 @@ if(input$mark_pattern==0){
     ##
     # make a thing that uses input$day_zero to get d since
     ###
-    if(input$day_zero!=Sys.Date()){
+    if(length(input$day_zero)!=0){
     saving_df$day_since_laying<-yday(saving_df$ts)-yday(parse_date_time(as.character(date(input$day_zero)), orders = c("Ymd")))
     } else {saving_df$day_since_laying<-NA}
 
@@ -629,15 +630,57 @@ if(input$mark_pattern==0){
     }
 
     write.csv(saving_df,
-              file = paste("result/marcado_", input$archivo, sep = "")
-              )
+              file = paste("result/marcado_", input$archivo, sep = ""),
+              row.names = F)
     js$reset()
   })
 
+  observeEvent(input$pre_save_raw, {
 
-  ####################################################
-  # CPA
-  ####################################################
+    pre_saving_df<-values$all_datos_marcados
+
+
+
+    if (file.exists("result")){
+
+    } else {
+      dir.create("result")
+    }
+
+    write.csv(pre_saving_df,
+              file = paste("result/temp_", input$archivo, sep = ""),
+    row.names = F)
+  })
+
+resume <- observeEvent(input$resume, {
+    inFile <- input$pre_saved_file
+
+    if (!is.null(inFile)){
+    loaded<-read.table(inFile$datapath, stringsAsFactors = F, sep=",", header = T)
+    loaded$ts<-parse_date_time(loaded$ts, "Ymd HMS")
+
+    }
+#tack on to values$all_datos_marcados
+
+    values$all_datos_marcados<-rbind(values$all_datos_marcados, loaded)
+    #marked_rects()
+
+  })
+
+
+
+  output$final_loaded_ts<-renderText({
+    as.character(values$all_datos_marcados$ts[nrow(values$all_datos_marcados)])
+    })
+
+
+
+
+
+  ########################################################################################################################################################
+  ########################################################################################################################################################
+  ########################################################################################################################################################
+  ################# CPA ##################################################################################################################################
 
   output$header_cpa<-renderPrint({
     o=datos_crudos_pre()
