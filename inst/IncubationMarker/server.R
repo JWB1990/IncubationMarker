@@ -83,19 +83,20 @@ shinyServer(function(input, output) {
   })
 
   #get brushed points of first viewer
-  bpts <- reactive({
-    validate(
-      need(is.null(input$plot1_brush) == FALSE, "Selecciona unos puntos")
-    )
-    brushedPoints(datos(), input$plot1_brush)
-    })
+  firstbrushstilldeadly<-observeEvent(input$plot1_brush,{
+    values$bpts<-brushedPoints(datos(), input$plot1_brush)
+  })
 
   #get single event
   output$plot2 <- renderPlot({
-    points2<-bpts()
+
+    validate(
+      need(is.null(input$plot1_brush) == FALSE, "Selecciona unos puntos")
+    )
+    points2<-values$bpts
 
 
-    ggplot(data=bpts(),
+    ggplot(data=points2,
            aes(x=ts, y=temperatura, colour=sensor))+geom_line()+geom_point()+
       scale_x_datetime(breaks = date_breaks("15 min"),
                        minor_breaks=date_breaks("1 min"), labels=date_format("%H:%M:%S"))+
@@ -116,7 +117,7 @@ shinyServer(function(input, output) {
     validate(
       need(is.null(input$plot2_brush) == FALSE, "Selecciona un evento")
     )
-    brushedPoints(bpts(), input$plot2_brush)
+    brushedPoints(values$bpts, input$plot2_brush)
   })
 
   #make reactive fit choice
@@ -199,14 +200,16 @@ shinyServer(function(input, output) {
   })
 
 
-    values$event_values<-1
+    values$evt_class_end<-1
+    evt_class_end<-reactive({values$evt_class_end})
 
-    evt_class<-reactive({values$event_values})
-    evt_class_end<-reactive({(evt_class()+input$switch_event)%%2+1})
+    hitswtich<-observeEvent(input$switch_event, {values$evt_class_end<-(input$switch_event)%%2+1})
+
+
     output$monitor_evt_class<-renderText({ifelse(evt_class_end()==1, off_text, on_text)})
     #
 
-output$event_class<-reactive({as.numeric(evt_class_end())})
+output$event_class<-reactive({evt_class_end()})
 outputOptions(output, "event_class", suspendWhenHidden = FALSE)
 
 
@@ -224,10 +227,15 @@ outputOptions(output, "event_class", suspendWhenHidden = FALSE)
 
     values$all_datos_marcados <- res
 
-    ###################################now update evt_class
-    values$event_values<-values$event_values+input$mark_pattern
+
     ###################################and scoot bpts to clip LHS selected frame
-    #values$bpts()<-
+    brushedpoints1<-values$bpts
+    brushedpoints2<-values$bpts2()
+    values$bpts<-subset(brushedpoints1, brushedpoints1$ts>max(brushedpoints2$ts))
+
+    ###################################last update evt_class
+    values$evt_class_end<-(values$evt_class_end+input$mark_pattern+1)%%2+1
+
   })
 
   marked_rects<-reactive({
@@ -480,6 +488,7 @@ O3_poly_off<-reactive({
     } else if(evt_class_end()==1 & input$col_amb==0){
       return(fitModels(models_off_noamb_chosen , x(), y()))
     }
+
     })
 
 ################ this determines the spot at which the threshold is reached
@@ -487,37 +496,43 @@ O3_poly_off<-reactive({
 
   t_at_half_from_T_s_on<-reactive({
 
+isolate({
+  if(evt_class_end()==1 | !c("newton") %in% input$on_models ){u<-1000000}
+  else{
 
-    if(evt_class_end()!="2" | !c("newton") %in% input$on_models ){1000000}
-    else{
+    fits<-fits()
+    on_newton_pars<-fits$newton$m$getAllPars()
+    T_s<-as.numeric(on_newton_pars[names(on_newton_pars)=="T_s"])
+    a<-as.numeric(on_newton_pars[names(on_newton_pars)=="a"])
 
-      fits<-fits()
-      on_newton_pars<-fits$newton$m$getAllPars()
-      T_s<-as.numeric(on_newton_pars[names(on_newton_pars)=="T_s"])
-      a<-as.numeric(on_newton_pars[names(on_newton_pars)=="a"])
+    u<-log((input$umbral_on/100*T_s)/(T_s-0))/a
 
-      log((input$umbral_on/100*T_s)/(T_s-0))/a
+  }
+  u
+})
 
-    }
   })
 
   t_at_half_from_T_s_off<-reactive({
 
+    isolate({
 
-    if(evt_class_end()!="1"| !c("newton") %in% input$off_models ){1000000}
+    if(evt_class_end()==2 | !c("newton") %in% input$off_models ){u<-1000000}
     else if(input$col_amb!=0){
       fits<-fits()
       off_newton_pars<-fits$newton$m$getAllPars()
       a<-as.numeric(off_newton_pars[names(off_newton_pars)=="a"])
-      log((-input$umbral_off/100*max(y()))/(T_amb_event()-max( y() )))/a
+      u<-log((-input$umbral_off/100*max(y()))/(T_amb_event()-max( y() )))/a
     } else if(input$col_amb==0){
       fits<-fits()
       off_newton_pars<-fits$newton$m$getAllPars()
       a<-as.numeric(off_newton_pars[names(off_newton_pars)=="a"])
       T_s<-as.numeric(off_newton_pars[names(off_newton_pars)=="T_s"])
 
-      log((-input$umbral_off/100*max(y()))/(T_s-max( y() )))/a
+      u<-log((-input$umbral_off/100*max(y()))/(T_s-max( y() )))/a
     }
+    u
+    })
   })
 
   #this plots the fits
@@ -673,6 +688,9 @@ resume <- observeEvent(input$resume, {
     as.character(values$all_datos_marcados$ts[nrow(values$all_datos_marcados)])
     })
 
+  # output$evtclass<-renderText({
+  #   evt_class_end()
+  # })
 
 
 

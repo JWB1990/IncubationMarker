@@ -183,6 +183,8 @@ dateInput("day_zero", "Cuando es el dia 0? (si es desconocido dejalo vacio)", va
                           actionButton("save_raw", "Guarda el archivo final"))),
                  fluidRow(verbatimTextOutput("monitor_preloaded")),
 
+                # verbatimTextOutput("evtclass"),
+
 
 
                  value="manual"
