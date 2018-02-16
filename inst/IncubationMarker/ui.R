@@ -55,6 +55,7 @@ conditionalPanel(condition="input.tabs=='manual'",
         actionButton("switch_event", "Cambia el evento marcado"),
         verbatimTextOutput("monitor_evt_class")
 
+
       )
       ,
       HTML(
@@ -146,7 +147,7 @@ dateInput("day_zero", "Cuando es el dia 0? (si es desconocido dejalo vacio)", va
                  fluidRow(
                    column(width=12,
 
-                          h3("Seleccione el tipo y marca un evento"),
+                          h3("Marca un evento"),
                           uiOutput("plotui")
 
                    )

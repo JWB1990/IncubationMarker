@@ -68,6 +68,6 @@ jsResetCode <- "shinyjs.reset = function() {history.go(0)}" # Define the js meth
 #4. record threshold used
 #useful?
 
-on_text<-HTML("Seleccionaste un On-Bout")
-off_text<-HTML("Seleccionaste un Off-Bout")
+on_text<-HTML("Seleccionaras un On-Bout")
+off_text<-HTML("Seleccionaras un Off-Bout")
 

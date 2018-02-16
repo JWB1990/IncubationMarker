@@ -201,12 +201,13 @@ shinyServer(function(input, output) {
 
 
     values$evt_class_end<-1
-    evt_class_end<-reactive({values$evt_class_end})
+    values$evt_class_sum<-1
 
-    hitswtich<-observeEvent(input$switch_event, {values$evt_class_end<-(input$switch_event)%%2+1})
+    hitswtich<-observeEvent(input$switch_event, {values$evt_class_sum<-values$evt_class_sum+1})
 
-
+    evt_class_end<-reactive({(values$evt_class_sum)%%2+1})
     output$monitor_evt_class<-renderText({ifelse(evt_class_end()==1, off_text, on_text)})
+
     #
 
 output$event_class<-reactive({evt_class_end()})
@@ -234,7 +235,7 @@ outputOptions(output, "event_class", suspendWhenHidden = FALSE)
     values$bpts<-subset(brushedpoints1, brushedpoints1$ts>max(brushedpoints2$ts))
 
     ###################################last update evt_class
-    values$evt_class_end<-(values$evt_class_end+input$mark_pattern+1)%%2+1
+    values$evt_class_sum<-values$evt_class_sum+1
 
   })
 
@@ -538,8 +539,9 @@ isolate({
   #this plots the fits
   output$fit_plot1 <- renderPlot({
     fs<-fits()
-    all_converged<-all(sapply(fs[-length(fs)], FUN=function(x){x$convInfo$isConv}))
-    validate(need(all_converged==T, "Unas curvas no convergieron. Evento correcto?"))
+    #all_converged<-all(sapply(fs[-length(fs)], FUN=function(x){x$convInfo$isConv}))
+    validate(need(is.null(fs)==F & nrow(values$bpts2)>0  #add condition for brushpoints to be non empty
+                  ,"Unas curvas no convergieron. Curvas correctas?"))
     #make this better
     #use singluar gradient estimate warning
     #make the points toggleable
