@@ -23,6 +23,6 @@ Imports:
     shiny,
     shinydashboard,
     shinyjs,
-    thermPerf,
     tidyr,
+    V8,
     zoo

@@ -15,6 +15,10 @@ shinyUI(fluidPage(
   #for reset button
   useShinyjs(),                                           # Include shinyjs in the UI
   extendShinyjs(text = jsResetCode),                      # Add the js code to the page
+  tags$style(type="text/css",
+             ".shiny-output-error { visibility: hidden; }",
+             ".shiny-output-error:before { visibility: hidden; }"
+  ), #turns off warnings
 
   # Application title
   titlePanel("Temperatura"),
@@ -169,22 +173,21 @@ dateInput("day_zero", "Cuando es el dia 0? (si es desconocido dejalo vacio)", va
 
                    plotOutput("plot_final", width=1250)
 
-                 )
+                 ),
+
+                 fluidRow(verbatimTextOutput("monitor_markedrects")),
 
 
-                 ,
                  fluidRow(column(10,
                                  actionButton("pre_save_raw", "Guardar para reanudar ahorita"),
                                  fileInput("pre_saved_file", "Seleccional archivo",
                                            accept = c("txt")
                                  ),
-                                 actionButton("resume", "Reanudar"),
-                                 fluidRow(HTML("El ultimo evento marcado termino a las"),textOutput("final_loaded_ts"))),
+                                 actionButton("resume", "Reanudar")),
                           column(2,
                           actionButton("save_raw", "Guarda el archivo final"))),
-                 fluidRow(verbatimTextOutput("monitor_preloaded")),
+                 #fluidRow(verbatimTextOutput("monitor_preloaded")),
 
-                # verbatimTextOutput("evtclass"),
 
 
 

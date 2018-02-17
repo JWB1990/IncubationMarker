@@ -74,12 +74,18 @@ shinyServer(function(input, output) {
 
   output$plot1 <- renderPlot({
     cr<-datos()
-    ggplot(data=cr,
-           aes(x=ts, y=temperatura, colour=sensor))+geom_line()+
-      scale_x_datetime(breaks = seq(floor_date(min(cr$ts), unit = "days"),floor_date(max(cr$ts), unit = "days"),
-                                                                                              by="12 hours"))+
-      ylim(input$ylim)+theme(legend.position="left")
+    nightboundaries<-cr %>% filter(hour(ts)==0 & minute(ts)==0)
+    p<-ggplot(data=cr)+
+      geom_line(data=cr,aes(x=ts, y=temperatura, colour=sensor))+
+      scale_x_datetime(breaks = seq(floor_date(min(cr$ts), unit = "days"),
+                                    floor_date(max(cr$ts), unit = "days"),
+                                    by="12 hours"),labels=date_format("%Y-%m-%d\n%H:%M"))+
+      ylim(input$ylim)+theme(legend.position="left")+xlab("Tiempo")+ylab("Temperatura")+geom_vline(data=nightboundaries, aes(xintercept=ts), alpha=0.5, lty=2)
 
+    if(nrow(marked_rects())>0){
+      mr<-data.frame(marked_rects())
+      p<-p+geom_rect(data=mr, aes(xmin=start-30, xmax=end+30, ymin=-Inf, ymax=Inf), fill="grey", alpha=0.4)}
+    p
   })
 
   #get brushed points of first viewer
@@ -94,15 +100,28 @@ shinyServer(function(input, output) {
       need(is.null(input$plot1_brush) == FALSE, "Selecciona unos puntos")
     )
     points2<-values$bpts
+    nightboundaries<-points2 %>% filter(hour(ts)==0 & minute(ts)==0)
+    m<-min(points2$ts)
+    day<-paste0("Fecha: ", paste(year(m), month(m), day(m), sep="-"))
 
 
-    ggplot(data=points2,
-           aes(x=ts, y=temperatura, colour=sensor))+geom_line()+geom_point()+
+    p<-ggplot(data=points2)+
+      geom_line(data=points2,
+                aes(x=ts, y=temperatura, colour=sensor))+
+      geom_point(data=points2,
+                 aes(x=ts, y=temperatura, colour=sensor))+
+
       scale_x_datetime(breaks = date_breaks("15 min"),
-                       minor_breaks=date_breaks("1 min"), labels=date_format("%H:%M:%S"))+
-      ylim(input$ylim)+theme(legend.position="left")
+                       minor_breaks=date_breaks("1 min"), labels=date_format("%H:%M"),
+                       limits = range(points2$ts))+
+      ylim(input$ylim)+theme(legend.position="left")+xlab("Tiempo")+ylab("Temperatura")+geom_vline(data=nightboundaries, aes(xintercept=ts), alpha=0.5, lty=2)+
+      ggtitle(day)
 
+    if(nrow(marked_rects())>0){
+      mr<-data.frame(marked_rects())
+      p<-p+geom_rect(data=mr, aes(xmin=start-30, xmax=end+30, ymin=-Inf, ymax=Inf), fill="grey", alpha=0.4)}
 
+p
 
   })
 
@@ -241,6 +260,8 @@ outputOptions(output, "event_class", suspendWhenHidden = FALSE)
 
   marked_rects<-reactive({
 
+    #validate(need(nrow(values$all_datos_marcados)>0, "Marca unos eventos"))
+
   values$all_datos_marcados$event_number <-   rep(seq_along(rle(values$all_datos_marcados$patron)$lengths),
                                                   rle(values$all_datos_marcados$patron)$lengths)
 
@@ -261,7 +282,7 @@ outputOptions(output, "event_class", suspendWhenHidden = FALSE)
     ggplot()+geom_point(data=values$bpts2() %>% filter(sensor==input$fit_selector),
                         aes(x=ts, y=temperatura, colour=sensor), size=4)+
       geom_point(data=values$bpts2() %>% filter(sensor!=input$fit_selector),
-                 aes(x=ts, y=temperatura, colour=sensor), alpha=0.6, size=2)
+                 aes(x=ts, y=temperatura, colour=sensor), alpha=0.6, size=2)+xlab("Tiempo")+ylab("Temperatura")
 
 
 
@@ -456,6 +477,7 @@ O3_poly_off<-reactive({
 
   fits<-reactive({
 
+
     ##################
     #define subsets of models to be run with switch
     models_on = getModelLibrary()[c("linearFit")]
@@ -483,13 +505,13 @@ O3_poly_off<-reactive({
     models_off_noamb_chosen<-models_off_noamb[input$off_models]
 
     if(evt_class_end()==2){
-      return(fitModels(models_on_chosen , x(), y()))
+      res<-( suppressWarnings(fitModels(models_on_chosen , x(), y())))
     } else if(evt_class_end()==1 & input$col_amb!=0){
-        return(fitModels(models_off_chosen , x(), y()))
+        res<-(suppressWarnings(fitModels(models_off_chosen , x(), y())))
     } else if(evt_class_end()==1 & input$col_amb==0){
-      return(fitModels(models_off_noamb_chosen , x(), y()))
+      res<-(suppressWarnings(fitModels(models_off_noamb_chosen , x(), y())))
     }
-
+res
     })
 
 ################ this determines the spot at which the threshold is reached
@@ -497,50 +519,62 @@ O3_poly_off<-reactive({
 
   t_at_half_from_T_s_on<-reactive({
 
-isolate({
+
   if(evt_class_end()==1 | !c("newton") %in% input$on_models ){u<-1000000}
   else{
 
+
     fits<-fits()
+    xpred<-seq(0, max(x()), length.out = 100)
+    ypred<-averageCurve(fits, xpred)
     on_newton_pars<-fits$newton$m$getAllPars()
     T_s<-as.numeric(on_newton_pars[names(on_newton_pars)=="T_s"])
-    a<-as.numeric(on_newton_pars[names(on_newton_pars)=="a"])
 
-    u<-log((input$umbral_on/100*T_s)/(T_s-0))/a
+
+    u<-min(xpred[ypred$y>((T_s)*0.01*(100-input$umbral_on))])
 
   }
   u
-})
 
   })
 
+
   t_at_half_from_T_s_off<-reactive({
 
-    isolate({
+    data_to_fit<-data_to_fit()
+
 
     if(evt_class_end()==2 | !c("newton") %in% input$off_models ){u<-1000000}
     else if(input$col_amb!=0){
       fits<-fits()
-      off_newton_pars<-fits$newton$m$getAllPars()
-      a<-as.numeric(off_newton_pars[names(off_newton_pars)=="a"])
-      u<-log((-input$umbral_off/100*max(y()))/(T_amb_event()-max( y() )))/a
+      xpred<-seq(0, max(x()), length.out = 100)
+      ypred<-averageCurve(fits, xpred)
+      T_a<-T_amb_event()
+      T_max<-max(y())
+
+      u<-min(xpred[ypred$y<((T_a)+0.01*(input$umbral_off)*(T_max-T_a))])
+
+
+
     } else if(input$col_amb==0){
       fits<-fits()
+      xpred<-seq(0, max(x()), length.out = 100)
+      ypred<-averageCurve(fits, xpred)
       off_newton_pars<-fits$newton$m$getAllPars()
-      a<-as.numeric(off_newton_pars[names(off_newton_pars)=="a"])
-      T_s<-as.numeric(off_newton_pars[names(off_newton_pars)=="T_s"])
-
-      u<-log((-input$umbral_off/100*max(y()))/(T_s-max( y() )))/a
+      T_a<-as.numeric(off_newton_pars[names(off_newton_pars)=="T_s"])
+      T_max<-max(y())
+      u<-min(xpred[ypred$y<((T_a)+0.01*(input$umbral_off)*(T_max-T_a))])
     }
     u
-    })
+
   })
 
   #this plots the fits
   output$fit_plot1 <- renderPlot({
     fs<-fits()
     #all_converged<-all(sapply(fs[-length(fs)], FUN=function(x){x$convInfo$isConv}))
-    validate(need(is.null(fs)==F & nrow(values$bpts2)>0  #add condition for brushpoints to be non empty
+    validate(need(is.null(fs)==F  #add condition for brushpoints to be non empty   #& nrow(values$bpts2)>0
+                #########fixxxxxxxxxxxxxxxxxxx#############
                   ,"Unas curvas no convergieron. Curvas correctas?"))
     #make this better
     #use singluar gradient estimate warning
@@ -585,15 +619,20 @@ isolate({
 
 
     points_final<-values$all_datos_marcados %>% gather("sensor", "temperatura", which(names(datos_crudos()) %in% c("huevo", "nido")))
+    #this is assuming 60 seconds recording intervals
+    points_final$contig<-rep(1:(length(which(diff(as.numeric(points_final$ts))>60))+1),
+                             (rle(diff(as.numeric(points_final$ts)))$lengths+1)[rle(diff(as.numeric(points_final$ts)))$values==60])
 
     min2<-min(points_final$ts)-60
     max2<-max(points_final$ts)+60
+
+    nightboundaries<-points_final %>% filter(hour(ts)==0 & minute(ts)==0)
 
     #do sth to this
 
 if(nrow(marked_rects())==0){
   p<-   ggplot(data=points_final,
-           aes(x=ts, y=temperatura, colour=sensor))+geom_line()
+           aes(x=ts, y=temperatura, colour=sensor, group=contig))+geom_line()
 }
     #add the shapes
  else{
@@ -602,14 +641,15 @@ if(nrow(marked_rects())==0){
 
 
       p<-ggplot()+geom_line(data=points_final,
-                            aes(x=ts, y=temperatura, colour=sensor))+
+                            aes(x=ts, y=temperatura, colour=sensor, group=contig))+
         geom_rect(data=mr, aes(xmin=start-30, xmax=end+30, ymin=-Inf, ymax=Inf, fill=patron), alpha=0.4)+
-        scale_fill_manual(values=palette)
+        scale_fill_manual(values=palette)+geom_vline(data=nightboundaries, aes(xintercept=ts), alpha=0.5, lty=2)
 
  }
 
 
-    p+theme(legend.position="left")#+scale_x_datetime(breaks = seq(floor_date(min2, unit = "days"),ceiling_date(max2, unit = "days"),by="1 hour"))
+    p+theme(legend.position="left")+xlab("Tiempo")+ylab("Temperatura")
+    #+scale_x_datetime(breaks = seq(floor_date(min2, unit = "days"),ceiling_date(max2, unit = "days"),by="1 hour"))
     #scale_x_datetime(breaks = date_breaks("12 hours"),
     #                 minor_breaks=date_breaks("1 hour"), labels=date_format("%Y:%m:%d %H:%M"))
   })
@@ -684,16 +724,24 @@ resume <- observeEvent(input$resume, {
 
   })
 
-
-
-  output$final_loaded_ts<-renderText({
-    as.character(values$all_datos_marcados$ts[nrow(values$all_datos_marcados)])
-    })
-
-  # output$evtclass<-renderText({
-  #   evt_class_end()
-  # })
-
+#values$fits_avail<-F
+# sth<-observeEvent(input$plot2_brush,{
+#   isolate({
+#     values$fits_avail<-!is.null(fits())
+#   })
+#
+# })
+# does shiny have an exists("reactiveobject")?
+#
+#   output$monitor_markedrects<-renderPrint({
+#
+#
+#     #validate(need(exists("uu"), "Seleccione una curva adecuada"))
+#     c("fits be avail", values$fits_avail)
+#
+#
+#   })
+#
 
 
 
@@ -732,11 +780,14 @@ resume <- observeEvent(input$resume, {
 
   output$cpa_plot1 <- renderPlot({
     cr<-datos()
+    nightboundaries<-cr %>% filter(hour(ts)==0 & minute(ts)==0)
+
     ggplot(data=cr,
            aes(x=ts, y=temperatura))+geom_line(aes(colour=sensor))+
       scale_x_datetime(breaks = seq(floor_date(min(cr$ts), unit = "days"),floor_date(max(cr$ts), unit = "days"),
                                     by="12 hours"))+
-      ylim(input$ylim)+geom_point(data=cpa_pts1(), aes(x=ts, y=temperatura))+theme(legend.position="left")
+      ylim(input$ylim)+geom_point(data=cpa_pts1(), aes(x=ts, y=temperatura))+theme(legend.position="left")+
+      xlab("Tiempo")+ylab("Temperatura")+geom_vline(data=nightboundaries, aes(xintercept=ts), alpha=0.5, lty=2)
 
   })
 
