@@ -1,4 +1,4 @@
-﻿#License
+﻿#LICENSE
 
 Copyright 2018 Justin Baldwin and Mario Loaiza-Muñoz
 
