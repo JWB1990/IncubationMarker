@@ -60,4 +60,4 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 * Inspiration: Cooper, C. and Mills, H. 2005. New software for quantifying incubation behavior from time-series recordings. Journal of Field Ornithology 76(4):352-356.
 
-* Shoutout to the [thermPerf] (https://github.com/mdjbru-R-packages/thermPerf) package
+* Shoutout to the [thermPerf](https://github.com/mdjbru-R-packages/thermPerf) package
