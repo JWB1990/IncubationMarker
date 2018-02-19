@@ -603,7 +603,10 @@ res
   #kind of unneccesary
 
   output$fit_plot2 <- renderPlot({
-
+    validate(
+      need(nrow(values$bpts2())>0  ,"Seleccione un evento"),
+      need(try(is.null(fits())==F)  ,"Unas curvas no convergieron. Curvas correctas?")
+    )
   weights = calculateAIC(fits())
   plot(weights)
 
@@ -730,24 +733,6 @@ resume <- observeEvent(input$resume, {
 
   })
 
-#values$fits_avail<-F
-# sth<-observeEvent(input$plot2_brush,{
-#   isolate({
-#     values$fits_avail<-!is.null(fits())
-#   })
-#
-# })
-# does shiny have an exists("reactiveobject")?
-#
-#   output$monitor_markedrects<-renderPrint({
-#
-#
-#     #validate(need(exists("uu"), "Seleccione una curva adecuada"))
-#     c("fits be avail", values$fits_avail)
-#
-#
-#   })
-#
 
 
 
@@ -774,8 +759,12 @@ resume <- observeEvent(input$resume, {
     m.data<-rollmean(cru[,col], k=input$movingaverage_width)
 
     #fix this so t is right
+    nrow_all<-nrow(cru)
+    nrow_rollmean<-length(m.data)
+    diff_in_length<-nrow_all-nrow_rollmean
+    dil<-ceiling(diff_in_length/2)
 
-    d=data.frame("ts"=cru$ts[1:length(m.data)],
+    d=data.frame("ts"=cru$ts[dil:(nrow(cru)-dil)],
                "temperatura"=m.data)
     m.pelt=cpt.mean(d$temperatura,method="PELT")
     m.points<-cpts(m.pelt)
@@ -796,6 +785,61 @@ resume <- observeEvent(input$resume, {
       xlab("Tiempo")+ylab("Temperatura")+geom_vline(data=nightboundaries, aes(xintercept=ts), alpha=0.5, lty=2)
 
   })
+
+
+  cpa_bpts2<-reactive({
+    validate(
+      need(is.null(input$cpa_plot1_brush) == FALSE, "Selecciona un evento")
+    )
+    brushedPoints(datos(), input$cpa_plot1_brush)
+
+
+  })
+
+  cpa_pts2<-reactive({
+    validate(
+      need(is.null(input$cpa_plot1_brush) == FALSE, "Selecciona un evento")
+    )
+
+      brushedPoints(cpa_pts1(), input$cpa_plot1_brush)
+
+
+
+
+  })
+
+  output$cpa_plot2 <- renderPlot({
+
+    validate(
+      need(is.null(input$cpa_plot1_brush) == FALSE, "Selecciona unos puntos")
+    )
+    points2<-brushedPoints(datos(), input$cpa_plot1_brush)
+    nightboundaries<-points2 %>% filter(hour(ts)==0 & minute(ts)==0)
+    m<-min(points2$ts)
+    day<-paste0("Fecha: ", paste(year(m), month(m), day(m), sep="-"))
+
+    #breaks
+    breaks<-cpa_pts2()
+
+
+    p<-ggplot(data=points2)+
+      geom_line(data=points2,
+                aes(x=ts, y=temperatura, colour=sensor))+
+      geom_point(data=points2,
+                 aes(x=ts, y=temperatura, colour=sensor))+
+
+      scale_x_datetime(breaks = date_breaks("15 min"),
+                       minor_breaks=date_breaks("1 min"), labels=date_format("%H:%M"),
+                       limits = range(points2$ts))+
+      ylim(input$ylim)+theme(legend.position="left")+xlab("Tiempo")+ylab("Temperatura")+geom_vline(data=nightboundaries, aes(xintercept=ts), alpha=0.5, lty=2)+
+      ggtitle(day)+
+      geom_vline(data=breaks, aes(xintercept = ts))
+
+
+    p
+
+  })
+
 
   output$cpa_plotui <- renderUI({
     plotOutput("cpa_plot2",
