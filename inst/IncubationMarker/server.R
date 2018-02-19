@@ -505,11 +505,11 @@ O3_poly_off<-reactive({
     models_off_noamb_chosen<-models_off_noamb[input$off_models]
 
     if(evt_class_end()==2){
-      res<-( suppressWarnings(fitModels(models_on_chosen , x(), y())))
+      res<-( (fitModels(models_on_chosen , x(), y())))
     } else if(evt_class_end()==1 & input$col_amb!=0){
-        res<-(suppressWarnings(fitModels(models_off_chosen , x(), y())))
+        res<-((fitModels(models_off_chosen , x(), y())))
     } else if(evt_class_end()==1 & input$col_amb==0){
-      res<-(suppressWarnings(fitModels(models_off_noamb_chosen , x(), y())))
+      res<-((fitModels(models_off_noamb_chosen , x(), y())))
     }
 res
     })
@@ -569,13 +569,19 @@ res
 
   })
 
+
+
+
   #this plots the fits
   output$fit_plot1 <- renderPlot({
-    fs<-fits()
+
     #all_converged<-all(sapply(fs[-length(fs)], FUN=function(x){x$convInfo$isConv}))
-    validate(need(is.null(fs)==F  #add condition for brushpoints to be non empty   #& nrow(values$bpts2)>0
-                #########fixxxxxxxxxxxxxxxxxxx#############
-                  ,"Unas curvas no convergieron. Curvas correctas?"))
+    validate(
+    need(nrow(values$bpts2())>0  ,"Seleccione un evento"),
+    need(try(is.null(fits())==F)  ,"Unas curvas no convergieron. Curvas correctas?")
+    )
+
+
     #make this better
     #use singluar gradient estimate warning
     #make the points toggleable
@@ -790,5 +796,12 @@ resume <- observeEvent(input$resume, {
       xlab("Tiempo")+ylab("Temperatura")+geom_vline(data=nightboundaries, aes(xintercept=ts), alpha=0.5, lty=2)
 
   })
+
+  output$cpa_plotui <- renderUI({
+    plotOutput("cpa_plot2",
+               click = brushOpts(id = "cpa_plot2_click")
+    )
+  })
+
 
 })

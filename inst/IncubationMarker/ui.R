@@ -15,10 +15,10 @@ shinyUI(fluidPage(
   #for reset button
   useShinyjs(),                                           # Include shinyjs in the UI
   extendShinyjs(text = jsResetCode),                      # Add the js code to the page
-  tags$style(type="text/css",
-             ".shiny-output-error { visibility: hidden; }",
-             ".shiny-output-error:before { visibility: hidden; }"
-  ), #turns off warnings
+  # tags$style(type="text/css",
+  #            ".shiny-output-error { visibility: hidden; }",
+  #            ".shiny-output-error:before { visibility: hidden; }"
+  # ), #turns off warnings
 
   # Application title
   titlePanel("Temperatura"),
@@ -202,7 +202,19 @@ dateInput("day_zero", "Cuando es el dia 0? (si es desconocido dejalo vacio)", va
 
                  h3("La serie de tiempo"),
 
-          plotOutput("cpa_plot1"),
+          plotOutput("cpa_plot1", width=1250,
+                     brush = brushOpts(
+                       id = "cpa_plot1_brush", direction = "x"
+                     )),
+          fluidRow(
+            column(width=12,
+
+                   h3("Marca un evento"),
+                   uiOutput("cpa_plotui")
+
+            )
+          ),
+
       #breakpoint controls             #1plot of time series with breakpoints, zoomable w brush
       #
       #move selected breakpoints       #2zoom window with removeable breakpoints (dblclick)
