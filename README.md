@@ -45,7 +45,7 @@ show what it does
 
 ## Built With
 
-* [Shiny](https://shiny.rstudio.com/)
+[Shiny](https://shiny.rstudio.com/)
 
 ## Authors
 
