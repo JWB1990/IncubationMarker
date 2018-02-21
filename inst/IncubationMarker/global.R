@@ -13,7 +13,7 @@
 
 
 
-list.of.packages <- c("changepoint", "devtools", "dplyr", "ggplot2", "lubridate", "scales", "shiny", "shinydashboard", "shinyjs", "tidyr","V8",  "zoo")
+list.of.packages <- c("changepoint", "devtools", "dplyr","dygraphs",  "ggplot2", "lubridate", "scales", "shiny", "shinydashboard", "shinyjs", "tidyr","V8",  "zoo")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
@@ -26,6 +26,7 @@ if(!require(thermPerf)){
 library(changepoint)
 library(devtools)
 library(dplyr)
+library(dygraphs)
 library(ggplot2)
 library(lubridate)
 library(scales)

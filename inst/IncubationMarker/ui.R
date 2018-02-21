@@ -39,9 +39,9 @@ shinyUI(fluidPage(
              splitLayout(
        numericInput("col_fecha", "Fecha", min=0, max=10, value = 1, width = '50px'),
        numericInput("col_hora", "Hora", min=0, max=10, value = 2, width = '50px'),
-       numericInput("col_huevo", "Huevo", min=0, max=10, value = 3, width = '50px'),
-       numericInput("col_nido", "Nido", min=0, max=10, value = 4, width ='50px'),
-       numericInput("col_amb", "Ambiental", min=0, max=10, value = 5, width = '50px')
+       numericInput("col_huevo", "Huevo", min=0, max=10, value = 0, width = '50px'),
+       numericInput("col_nido", "Nido", min=0, max=10, value = 3, width ='50px'),
+       numericInput("col_amb", "Ambiental", min=0, max=10, value = 4, width = '50px')
        ))
       ),
       actionButton("load", "Carga los datos"),
@@ -107,7 +107,10 @@ conditionalPanel(condition="input.tabs=='manual'",
 conditionalPanel(condition="input.tabs=='cpa'",
                  uiOutput("fitcontrols_cpa"),
                  numericInput("movingaverage_width", "Ventana del Promedio", value = 10, min = 1,max=500),
-                 radioButtons("cpa_meth", "Metodologia de CPA", choices = c("PELT", "PELT Manual", "BinSeg"), selected = "PELT")
+                 radioButtons("cpa_meth", "Metodologia de CPA", choices = c("PELT", "PELT Manual", "BinSeg"), selected = "PELT"),
+                 sliderInput("cpa_max_dif_on", "Maximum Difference: On-Bout", c(1,3), min = 0,max=15, round=-3, step=0.001),
+                 sliderInput("cpa_max_dif_off", "Maximum Difference: Off-Bout", c(-3, -1), min = -15,max=0, round=-3, step=0.001)
+
                  #breakpoint controls             #1plot of time series with breakpoints, zoomable w brush
                  #
                  #move selected breakpoints       #2zoom window with removeable breakpoints (dblclick)
@@ -206,6 +209,7 @@ dateInput("day_zero", "Cuando es el dia 0? (si es desconocido dejalo vacio)", va
                      brush = brushOpts(
                        id = "cpa_plot1_brush", direction = "x"
                      )),
+
           fluidRow(
             column(width=12,
 
@@ -214,6 +218,9 @@ dateInput("day_zero", "Cuando es el dia 0? (si es desconocido dejalo vacio)", va
 
             )
           ),
+
+         dygraphOutput("cpa_plot2_dygraph"),
+          verbatimTextOutput("cpatab"),
 
       #breakpoint controls             #1plot of time series with breakpoints, zoomable w brush
       #

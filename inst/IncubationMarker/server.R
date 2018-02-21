@@ -49,7 +49,12 @@ shinyServer(function(input, output) {
 
   #asegura que los formatos estan corectos
   cru$ts<-parse_date_time(paste(cru$hora, cru$fecha), orders = c("HMS mdy", "HMS mdY"))
+  #cru
+
+
   cru
+
+
   })
   observeEvent(input$load, {
     isolate({
@@ -754,34 +759,67 @@ resume <- observeEvent(input$resume, {
   cpa_pts1<-reactive({
     cru<-datos_crudos()
 
+    #add filter here
+    # cols<-which(names(cru) %in% c("nido", "huevo", "amb"))
+    # maxes<-apply(cru[,cols], 2, FUN=function(x){max(x, na.rm=T)})
+    # mins<-apply(cru[,cols], 2, FUN=function(x){min(x, na.rm=T)})
+    # cru<-subset(cru, maxes < max(input$ylim) & mins > min(input$ylim))
+
     col<-input$fit_selector_cpa
 
-    m.data<-rollmean(cru[,col], k=input$movingaverage_width)
+    # m.data<-rollmean(cru[,col], k=input$movingaverage_width)
+    #
+    # #fix this so t is right
+    # nrow_all<-nrow(cru)
+    # nrow_rollmean<-length(m.data)
+    # diff_in_length<-nrow_all-nrow_rollmean
+    # dil<-ceiling(diff_in_length/2)
+    #
+    # d=data.frame("ts"=cru$ts[dil:(nrow(cru)-dil)],
+    #            "temperatura"=m.data)
+    #
+    # m.pelt=cpt.mean(d$temperatura,method="PELT")
+    # m.points<-cpts(m.pelt)
 
-    #fix this so t is right
-    nrow_all<-nrow(cru)
-    nrow_rollmean<-length(m.data)
-    diff_in_length<-nrow_all-nrow_rollmean
-    dil<-ceiling(diff_in_length/2)
+    #d[m.points,]
+     d=data.frame("ts"=cru$ts-30,
+                "dif"=c(diff(cru[,col],1),0),
+                "temperatura"=c(cru[,col]))
+    d.pts<-which((d$dif>min(input$cpa_max_dif_on) & d$dif<max(input$cpa_max_dif_on)) | (d$dif<max(input$cpa_max_dif_off) & d$dif>min(input$cpa_max_dif_off)))
+    d[d.pts,]
 
-    d=data.frame("ts"=cru$ts[dil:(nrow(cru)-dil)],
-               "temperatura"=m.data)
-    m.pelt=cpt.mean(d$temperatura,method="PELT")
-    m.points<-cpts(m.pelt)
 
-    d[m.points,]
 
   })
+
+  output$cpatab <- renderPrint({
+    # points2<-brushedPoints(datos(), input$cpa_plot1_brush)
+    #
+    #  dy_points2<-points2[,c("ts", "sensor", "temperatura")]
+    #  dy_points2$ts<-gsub(as.character(dy_points2$ts), pattern = "-", replacement = "/")
+    #  dy_points2<-tidyr::spread(dy_points2, sensor, temperatura)
+    #  rownames(dy_points2)<-dy_points2$ts
+    #  dy_points2$ts<-NULL
+     #dy_points2
+    list(
+      (input$cpa_plot2_dygraph_date_window),
+
+    (input$cpa_plot2_dygraph_click)
+    )
+    })
 
   output$cpa_plot1 <- renderPlot({
     cr<-datos()
     nightboundaries<-cr %>% filter(hour(ts)==0 & minute(ts)==0)
 
+    cpa_pts1<-cpa_pts1()
+    cpa_pts1<-subset(cpa_pts1, cpa_pts1$temperatura > input$ylim[1] & cpa_pts1$temperatura < input$ylim[2])
+
     ggplot(data=cr,
            aes(x=ts, y=temperatura))+geom_line(aes(colour=sensor))+
       scale_x_datetime(breaks = seq(floor_date(min(cr$ts), unit = "days"),floor_date(max(cr$ts), unit = "days"),
                                     by="12 hours"))+
-      ylim(input$ylim)+geom_point(data=cpa_pts1(), aes(x=ts, y=temperatura))+theme(legend.position="left")+
+      ylim(input$ylim)+geom_point(data=cpa_pts1, aes(x=ts, y=temperatura))+theme(legend.position="left")+
       xlab("Tiempo")+ylab("Temperatura")+geom_vline(data=nightboundaries, aes(xintercept=ts), alpha=0.5, lty=2)
 
   })
@@ -796,12 +834,13 @@ resume <- observeEvent(input$resume, {
 
   })
 
-  cpa_pts2<-reactive({
+  values$cpa_pts2<-reactive({
     validate(
       need(is.null(input$cpa_plot1_brush) == FALSE, "Selecciona un evento")
     )
 
-      brushedPoints(cpa_pts1(), input$cpa_plot1_brush)
+      cpts2<-brushedPoints(cpa_pts1(), input$cpa_plot1_brush)
+      subset(cpts2, cpts2$temperatura > input$ylim[1] & cpts2$temperatura < input$ylim[2])
 
 
 
@@ -819,7 +858,7 @@ resume <- observeEvent(input$resume, {
     day<-paste0("Fecha: ", paste(year(m), month(m), day(m), sep="-"))
 
     #breaks
-    breaks<-cpa_pts2()
+    breaks<-values$cpa_pts2()
 
 
     p<-ggplot(data=points2)+
@@ -840,6 +879,80 @@ resume <- observeEvent(input$resume, {
 
   })
 
+  output$cpa_plot2_dygraph <- renderDygraph({
+
+    validate(
+      need(is.null(input$cpa_plot1_brush) == FALSE, "Selecciona unos puntos")
+    )
+    points2<-brushedPoints(datos(), input$cpa_plot1_brush)
+
+    nightboundaries<-points2 %>% filter(hour(ts)==0 & minute(ts)==0)
+    m<-min(points2$ts)
+    day<-paste0("Fecha: ", paste(year(m), month(m), day(m), sep="-"))
+
+    #breaks
+    breaks<-values$cpa_pts2()
+
+
+#prep for dygraphs
+    dy_points2<-points2[,c("ts", "sensor", "temperatura")]
+    dy_points2$ts<-gsub(as.character(dy_points2$ts), pattern = "-", replacement = "/")
+    dy_points2<-tidyr::spread(dy_points2, sensor, temperatura)
+    rownames(dy_points2)<-dy_points2$ts
+    dy_points2$ts<-NULL
+
+    cols<-c("huevo", "nido", "amb")
+    cols<-cols[cols %in% names(dy_points2)]
+
+    dygraph(dy_points2, main="Coloca las demarcaciones de eventos") %>%
+      dySeries(cols[1], label=cols[1]) %>% dySeries(cols[2], label=cols[2]) %>%
+      dyRangeSelector()
+
+    #edits to make
+    #1
+    #make selected window reactive
+    #dyRangeSelector(dateWindow = c("1920-01-01", "1960-01-01")) that shit should be what comes from the first selection
+    #that allows for dygraphs window to scroll to end
+
+    #then add new series with 2x temp resolution as data
+    #restriction
+    #only one action available
+    #so it toggles breakpoints,
+
+
+#
+#     p<-ggplot(data=points2)+
+#       geom_line(data=points2,
+#                 aes(x=ts, y=temperatura, colour=sensor))+
+#       geom_point(data=points2,
+#                  aes(x=ts, y=temperatura, colour=sensor))+
+#
+#       scale_x_datetime(breaks = date_breaks("15 min"),
+#                        minor_breaks=date_breaks("1 min"), labels=date_format("%H:%M"),
+#                        limits = range(points2$ts))+
+#       ylim(input$ylim)+theme(legend.position="left")+xlab("Tiempo")+ylab("Temperatura")+geom_vline(data=nightboundaries, aes(xintercept=ts), alpha=0.5, lty=2)+
+#       ggtitle(day)+
+#       geom_vline(data=breaks, aes(xintercept = ts))
+#p
+
+  })
+
+  values$toggles<-reactive({rep(NA, nrow(datos_crudos()*2))})
+
+
+
+  change_a_barrier<-eventReactive(input$cpa_max_dif_on,{
+    #values$toggles<-
+    #add influence of cpa_bpts()
+  })
+  change_a_barrier2<-eventReactive(input$cpa_max_dif_off,{
+    #values$toggles<-
+    #add influence of cpa_bpts()
+  })
+  change_a_toggle<-eventReactive(input$cpa_plot2_dygraph_click,{
+    #values$toggles<-
+    #add influence of input$cpa_plot2_dygraph_click
+  })
 
   output$cpa_plotui <- renderUI({
     plotOutput("cpa_plot2",
