@@ -6,6 +6,9 @@
 \usage{
 whereHOBO()
 }
+\arguments{
+\item{none}{there is no parameter}
+}
 \description{
 This function returns the directory where you should paste your HOBO files
 }

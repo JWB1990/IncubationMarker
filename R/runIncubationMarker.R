@@ -1,7 +1,7 @@
 #' Run the IncubationMarker app
 #'
 #' This function is another way to run the app
-#' @param NULL
+#' @param none there is no parameter
 #' @keywords shiny
 #' @export
 #' @examples

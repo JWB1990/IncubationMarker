@@ -6,6 +6,9 @@
 \usage{
 runIncubationMarker()
 }
+\arguments{
+\item{none}{there is no parameter}
+}
 \description{
 This function is another way to run the app
 }

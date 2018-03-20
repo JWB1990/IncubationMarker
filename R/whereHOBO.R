@@ -1,7 +1,7 @@
 #' Where should I put my tables from HOBO?
 #'
 #' This function returns the directory where you should paste your HOBO files
-#' @param NULL
+#' @param none there is no parameter
 #' @keywords shiny
 #' @export
 #' @examples
