@@ -19,11 +19,11 @@ shinyServer(function(input, output) {
 
   datos_crudos_pre <- reactive({
     cru=read.table(paste("hobo", "/", input$archivo, sep = ""), header = T, stringsAsFactors = F, row.names = NULL)
-    cru$patron<-c(NA)
+
     if("row.names" %in% names(cru)){
       names(cru)<-c(names(cru)[2:ncol(cru)], paste0("X", ncol(cru)))
     }
-
+    cru$patron<-c(NA)
     cru
   })
 
@@ -64,9 +64,9 @@ shinyServer(function(input, output) {
 
     })
   })
-    # output$obs_raw<-renderDataTable({
-    #   head(values$all_datos_marcados)
-    #   })
+    output$obs_raw<-renderDataTable({
+      values$all_datos_marcados
+      })
   datos<-reactive({
   #cambia la tabla formato larga
     datos_crudos() %>% gather("sensor", "temperatura", which(names(datos_crudos()) %in% c("huevo", "nido", "amb")))

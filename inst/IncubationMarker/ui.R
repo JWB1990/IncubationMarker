@@ -144,7 +144,7 @@ dateInput("day_zero", "Cuando es el dia 0? (si es desconocido dejalo vacio)", va
                  verbatimTextOutput("header"),
 
                  h3("La serie de tiempo"),
-                 #dataTableOutput("obs_raw"),
+                  dataTableOutput("obs_raw"),
 
                  plotOutput("plot1", width=1250,
                             brush = brushOpts(
