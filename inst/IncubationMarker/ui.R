@@ -45,9 +45,10 @@ shinyUI(fluidPage(
        ))
       ),
       actionButton("load", "Carga los datos"),
+      numericInput("temp_res", "Resolución temporal (segundos)", min=1, max=180, value = 60, width = '100px'),
 
       fluidRow(
-       sliderInput("ylim", "Limite de Y", min=0, max=100, value = c(10,40))
+       sliderInput("ylim", "Limite de Y", min=-5, max=100, value = c(10,40))
        )
       ,
 conditionalPanel(condition="input.tabs=='manual'",
@@ -70,17 +71,23 @@ conditionalPanel(condition="input.tabs=='manual'",
 
         ),
 
+      checkboxInput("curve_help", "Mostrar opciones para curvas", value = FALSE),
+      #use toggle
+
+      #do with https://rdrr.io/cran/shinyjs/man/visibilityFuncs.html
+
 
 
       ###Init helper
 
-
+conditionalPanel("input.curve_help==true",
       conditionalPanel(
-        "output.event_class=='1' && input.tabs=='manual'"
+        "output.event_class=='1' && input.tabs=='manual' "
         ,
         fluidRow(
 
-          checkboxGroupInput("off_models", "Cuales modelos quieres correr?",choiceValues = models, choiceNames = models_labels, selected = models),
+          checkboxGroupInput("off_models", "Cuales modelos quieres correr?",choiceValues = models, choiceNames = models_labels,
+                             selected = c("linearFit", "newton")),
 
 
           numericInput("umbral_off", "Umbral off", 10, min=0, max=100)
@@ -90,16 +97,20 @@ conditionalPanel(condition="input.tabs=='manual'",
           ))
       ,
       conditionalPanel(
-        "output.event_class=='2'&& input.tabs=='manual'"
+        "output.event_class=='2' &&  input.tabs=='manual'"
         ,
         fluidRow(
 
-          checkboxGroupInput("on_models", "Cuales modelos quieres correr?",choiceValues = models, choiceNames = models_labels, selected = models),
+          checkboxGroupInput("on_models", "Cuales modelos quieres correr?",choiceValues = models, choiceNames = models_labels,
+                             selected = c("linearFit", "newton")),
 
           numericInput("umbral_on","Umbral On",  10, min=0, max=100)
            ,numericInput("init_newton_on_a", "Initial parameter a", -0.7, min=-10, max=10),
            numericInput("init_newton_on_T_s", "Initial parameter T_s", 10, min=--10, max=50)
         ))
+)
+
+
       #,
 
 ),
@@ -144,7 +155,7 @@ dateInput("day_zero", "Cuando es el dia 0? (si es desconocido dejalo vacio)", va
                  verbatimTextOutput("header"),
 
                  h3("La serie de tiempo"),
-                  dataTableOutput("obs_raw"),
+                verbatimTextOutput("obs_raw"),
 
                  plotOutput("plot1", width=1250,
                             brush = brushOpts(

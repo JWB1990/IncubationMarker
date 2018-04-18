@@ -64,8 +64,8 @@ shinyServer(function(input, output) {
 
     })
   })
-    output$obs_raw<-renderDataTable({
-      values$all_datos_marcados
+    output$obs_raw<-renderPrint({
+      input$plot2_brush
       })
   datos<-reactive({
   #cambia la tabla formato larga
@@ -632,7 +632,7 @@ res
     )
 
 
-    points_final<-values$all_datos_marcados %>% gather("sensor", "temperatura", which(names(datos_crudos()) %in% c("huevo", "nido")))
+    points_final<-values$all_datos_marcados %>% gather("sensor", "temperatura", first(which(names(datos_crudos()) %in% c("huevo", "nido"))))
     #this is assuming 60 seconds recording intervals
     points_final$contig<-rep(1:(length(which(diff(as.numeric(points_final$ts))>60))+1),
                              (rle(diff(as.numeric(points_final$ts)))$lengths+1)[rle(diff(as.numeric(points_final$ts)))$values==60])
