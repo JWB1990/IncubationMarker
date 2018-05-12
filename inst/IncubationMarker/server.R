@@ -812,20 +812,32 @@ resume <- observeEvent(input$resume, {
   })
 
   output$cpatab <- renderPrint({
-    # points2<-brushedPoints(datos(), input$cpa_plot1_brush)
-    #
-    #  dy_points2<-points2[,c("ts", "sensor", "temperatura")]
-    #  dy_points2$ts<-gsub(as.character(dy_points2$ts), pattern = "-", replacement = "/")
-    #  dy_points2<-tidyr::spread(dy_points2, sensor, temperatura)
-    #  rownames(dy_points2)<-dy_points2$ts
-    #  dy_points2$ts<-NULL
-     #dy_points2
-    list(
-      (input$cpa_plot2_dygraph_date_window),
+    points<-datos()
 
-    (input$cpa_plot2_dygraph_click),
-    values$cpa_pts2(),
-    values$toggles()
+    #breaks
+    breaks<-values$cpa_pts2()
+
+    #prep for dygraphs
+    dy_points<-points[,c("ts", "sensor", "temperatura")]
+    dy_points$ts<-gsub(as.character(dy_points$ts), pattern = "-", replacement = "/")
+
+    dy_points<-tidyr::spread(dy_points, sensor, temperatura)
+    rownames(dy_points)<-dy_points$ts
+    dy_points$ts<-NULL
+
+
+
+    clicked_x_point<-as.character(input$cpa_plot2_dygraph_click$x_closest_point)
+    clicked_x_point<-paste0(substr(clicked_x_point, 1,10), " ",substr(clicked_x_point, 12,19))
+    #clicked_x_point<-parse_date_time(clicked_x_point, orders = "ymd HMS")
+
+    list(
+      #(input$cpa_plot2_dygraph_date_window),
+
+    str(input$cpa_plot2_dygraph_click),
+  #  dy_points,
+  clicked_x_point,
+    values$toggles
     )
     })
 
@@ -936,9 +948,9 @@ resume <- observeEvent(input$resume, {
 
     p<-dygraph(dy_points, main="Coloca las demarcaciones de eventos") %>%
       dySeries(cols[1], label=cols[1]) %>% dySeries(cols[2], label=cols[2]) %>%
-      dyAxis("y", label = "Temp (C)", valueRange = c(input$ylim))
-    # %>%
-    #   dyRangeSelector(dateWindow = c(min_pt2, max_pt2))
+      dyAxis("y", label = "Temp (C)", valueRange = c(input$ylim)) %>%
+      dyRangeSelector(dateWindow = c(min_pt2, max_pt2)) %>%
+      dyOptions(labelsUTC = TRUE)
  #
     for(i in 1:nrow(breaks)){
       p<-p %>%  dyEvent(x = breaks[i,1], label='', labelLoc='bottom')
@@ -969,29 +981,35 @@ p
 
   })
 
-  values$toggles<-reactive({
+  set_up_event<-observe({
     dc=datos_crudos()
     tog_df<-data.frame("toggle"=rep(FALSE, nrow(dc)),
                "ts"=dc$ts)
 
     breaks<-values$cpa_pts2()
     tog_df$toggle[tog_df$ts %in% breaks$ts]<-TRUE
-    tog_df
+    values$toggles<-  tog_df
                })
 
 
 
-  change_a_barrier<-eventReactive(input$cpa_max_dif_on,{
-    #values$toggles<-
+  #change_a_barrier<-eventReactive(input$cpa_max_dif_on,{
+   # values$toggles<-
     #add influence of cpa_bpts()
-  })
-  change_a_barrier2<-eventReactive(input$cpa_max_dif_off,{
-    #values$toggles<-
-    #add influence of cpa_bpts()
-  })
-  change_a_toggle<-eventReactive(input$cpa_plot2_dygraph_click,{
-    #values$toggles<-
-    #add influence of input$cpa_plot2_dygraph_click
+  #})
+  # change_a_barrier2<-eventReactive(input$cpa_max_dif_off,{
+  #   #values$toggles<-
+  #   #add influence of cpa_bpts()
+  # })
+  change_a_toggle<-observeEvent(input$cpa_plot2_dygraph_click,{
+    values$toggles$ts<-as.character(values$toggles$ts)
+    clicked_x_point<-as.character(input$cpa_plot2_dygraph_click$x_closest_point)
+    clicked_x_point<-paste0(substr(clicked_x_point, 1,10), " ",substr(clicked_x_point, 12,19))
+    #clicked_x_point<-parse_date_time(clicked_x_point, orders = "ymd HMS")
+    current_state<-values$toggles$toggle[values$toggles$ts==clicked_x_point]
+    newstate<-ifelse(isTRUE(current_state), FALSE, TRUE)
+    values$toggles$toggle[values$toggles$ts==clicked_x_point]<-newstate
+
   })
 
   output$cpa_plotui <- renderUI({
