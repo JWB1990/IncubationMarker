@@ -117,10 +117,10 @@ conditionalPanel("input.curve_help==true",
 ########################################################################################################################################################
 conditionalPanel(condition="input.tabs=='cpa'",
                  uiOutput("fitcontrols_cpa"),
-                 numericInput("movingaverage_width", "Ventana del Promedio", value = 10, min = 1,max=500),
-                 radioButtons("cpa_meth", "Metodologia de CPA", choices = c("PELT", "PELT Manual", "BinSeg"), selected = "PELT"),
-                 sliderInput("cpa_max_dif_on", "Maximum Difference: On-Bout", c(1,3), min = 0,max=15, round=-3, step=0.001),
-                 sliderInput("cpa_max_dif_off", "Maximum Difference: Off-Bout", c(-3, -1), min = -15,max=0, round=-3, step=0.001)
+                 # numericInput("movingaverage_width", "Ventana del Promedio", value = 10, min = 1,max=500),
+                 # radioButtons("cpa_meth", "Metodologia de CPA", choices = c("PELT", "PELT Manual", "BinSeg"), selected = "PELT"),
+                 sliderInput("cpa_max_dif_on", "Maximum Difference: On-Bout", c(1.5,5), min = 0,max=15, round=-3, step=0.001),
+                 sliderInput("cpa_max_dif_off", "Maximum Difference: Off-Bout", c(-5, -1.5), min = -15,max=0, round=-3, step=0.001)
 
                  #breakpoint controls             #1plot of time series with breakpoints, zoomable w brush
                  #
@@ -155,7 +155,7 @@ dateInput("day_zero", "Cuando es el dia 0? (si es desconocido dejalo vacio)", va
                  verbatimTextOutput("header"),
 
                  h3("La serie de tiempo"),
-                verbatimTextOutput("obs_raw"),
+                #verbatimTextOutput("obs_raw"),
 
                  plotOutput("plot1", width=1250,
                             brush = brushOpts(
@@ -224,14 +224,14 @@ dateInput("day_zero", "Cuando es el dia 0? (si es desconocido dejalo vacio)", va
           fluidRow(
             column(width=12,
 
-                   h3("Marca un evento"),
-                   uiOutput("cpa_plotui")
-
+                   # h3("Marca un evento"),
+                   # uiOutput("cpa_plotui")
+                   dygraphOutput("cpa_plot2_dygraph"),
+                   verbatimTextOutput("cpatab")
             )
           ),
 
-         dygraphOutput("cpa_plot2_dygraph"),
-          verbatimTextOutput("cpatab"),
+
 
       #breakpoint controls             #1plot of time series with breakpoints, zoomable w brush
       #

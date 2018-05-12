@@ -64,9 +64,9 @@ shinyServer(function(input, output) {
 
     })
   })
-    output$obs_raw<-renderPrint({
-      input$plot2_brush
-      })
+    # output$obs_raw<-renderPrint({
+    #   values$plot2_brush_x_width
+    #   })
   datos<-reactive({
   #cambia la tabla formato larga
     datos_crudos() %>% gather("sensor", "temperatura", which(names(datos_crudos()) %in% c("huevo", "nido", "amb")))
@@ -137,11 +137,17 @@ p
     )
   })
 
+  some_event<-observeEvent( input$plot2_brush, {
+    values$plot2_brush<- input$plot2_brush
+
+
+  })
+
   values$bpts2 <- reactive({
     validate(
-      need(is.null(input$plot2_brush) == FALSE, "Selecciona un evento")
+      need(is.null(values$plot2_brush) == FALSE, "Selecciona un evento")
     )
-    brushedPoints(values$bpts, input$plot2_brush)
+    brushedPoints(values$bpts, values$plot2_brush)
   })
 
   #make reactive fit choice
@@ -244,6 +250,8 @@ outputOptions(output, "event_class", suspendWhenHidden = FALSE)
       values$all_datos_marcados,
       datos_marcados()
       )
+
+
     #allow for fuckups: when ppl select the wrong thing, they
     #can select it again and overwrite it
     #so first rbind, then retain only last etnries for each timestamp
@@ -252,6 +260,10 @@ outputOptions(output, "event_class", suspendWhenHidden = FALSE)
 
     values$all_datos_marcados <- res
 
+    # ####################### to scoot the marked data in brushed point2, first remember how far to scoot
+    # isolate({
+    #   values$plot2_brush_x_width<-as.numeric(values$plot2_brush$xmax-values$plot2_brush$xmin)
+    # })
 
     ###################################and scoot bpts to clip LHS selected frame
     brushedpoints1<-values$bpts
@@ -261,7 +273,14 @@ outputOptions(output, "event_class", suspendWhenHidden = FALSE)
     ###################################last update evt_class
     values$evt_class_sum<-values$evt_class_sum+1
 
+
+    # ####################### now scoot the marked data in brushed point2
+    # values$plot2_brush$xmax<-values$plot2_brush$xmax+values$plot2_brush_x_width
+    # values$plot2_brush$xmin<-values$plot2_brush$xmin+values$plot2_brush_x_width
+
   })
+
+
 
   marked_rects<-reactive({
 
@@ -782,7 +801,7 @@ resume <- observeEvent(input$resume, {
     # m.points<-cpts(m.pelt)
 
     #d[m.points,]
-     d=data.frame("ts"=cru$ts-30,
+     d=data.frame("ts"=cru$ts,
                 "dif"=c(diff(cru[,col],1),0),
                 "temperatura"=c(cru[,col]))
     d.pts<-which((d$dif>min(input$cpa_max_dif_on) & d$dif<max(input$cpa_max_dif_on)) | (d$dif<max(input$cpa_max_dif_off) & d$dif>min(input$cpa_max_dif_off)))
@@ -804,7 +823,9 @@ resume <- observeEvent(input$resume, {
     list(
       (input$cpa_plot2_dygraph_date_window),
 
-    (input$cpa_plot2_dygraph_click)
+    (input$cpa_plot2_dygraph_click),
+    values$cpa_pts2(),
+    values$toggles()
     )
     })
 
@@ -839,61 +860,70 @@ resume <- observeEvent(input$resume, {
       need(is.null(input$cpa_plot1_brush) == FALSE, "Selecciona un evento")
     )
 
-      cpts2<-brushedPoints(cpa_pts1(), input$cpa_plot1_brush)
-      subset(cpts2, cpts2$temperatura > input$ylim[1] & cpts2$temperatura < input$ylim[2])
+      cpa_cpts1<-cpa_pts1()
+      subset(cpa_cpts1, cpa_cpts1$temperatura > input$ylim[1] & cpa_cpts1$temperatura < input$ylim[2])
 
 
 
 
   })
 
-  output$cpa_plot2 <- renderPlot({
-
-    validate(
-      need(is.null(input$cpa_plot1_brush) == FALSE, "Selecciona unos puntos")
-    )
-    points2<-brushedPoints(datos(), input$cpa_plot1_brush)
-    nightboundaries<-points2 %>% filter(hour(ts)==0 & minute(ts)==0)
-    m<-min(points2$ts)
-    day<-paste0("Fecha: ", paste(year(m), month(m), day(m), sep="-"))
-
-    #breaks
-    breaks<-values$cpa_pts2()
-
-
-    p<-ggplot(data=points2)+
-      geom_line(data=points2,
-                aes(x=ts, y=temperatura, colour=sensor))+
-      geom_point(data=points2,
-                 aes(x=ts, y=temperatura, colour=sensor))+
-
-      scale_x_datetime(breaks = date_breaks("15 min"),
-                       minor_breaks=date_breaks("1 min"), labels=date_format("%H:%M"),
-                       limits = range(points2$ts))+
-      ylim(input$ylim)+theme(legend.position="left")+xlab("Tiempo")+ylab("Temperatura")+geom_vline(data=nightboundaries, aes(xintercept=ts), alpha=0.5, lty=2)+
-      ggtitle(day)+
-      geom_vline(data=breaks, aes(xintercept = ts))
-
-
-    p
-
-  })
+  # output$cpa_plot2 <- renderPlot({
+  #
+  #   validate(
+  #     need(is.null(input$cpa_plot1_brush) == FALSE, "Selecciona unos puntos")
+  #   )
+  #   points2<-brushedPoints(datos(), input$cpa_plot1_brush)
+  #   nightboundaries<-points2 %>% filter(hour(ts)==0 & minute(ts)==0)
+  #   m<-min(points2$ts)
+  #   day<-paste0("Fecha: ", paste(year(m), month(m), day(m), sep="-"))
+  #
+  #   #breaks
+  #   breaks<-values$cpa_pts2()
+  #
+  #
+  #   p<-ggplot(data=points2)+
+  #     geom_line(data=points2,
+  #               aes(x=ts, y=temperatura, colour=sensor))+
+  #     geom_point(data=points2,
+  #                aes(x=ts, y=temperatura, colour=sensor))+
+  #
+  #     scale_x_datetime(breaks = date_breaks("15 min"),
+  #                      minor_breaks=date_breaks("1 min"), labels=date_format("%H:%M"),
+  #                      limits = range(points2$ts))+
+  #     ylim(input$ylim)+theme(legend.position="left")+xlab("Tiempo")+ylab("Temperatura")+geom_vline(data=nightboundaries, aes(xintercept=ts), alpha=0.5, lty=2)+
+  #     ggtitle(day)+
+  #     geom_vline(data=breaks, aes(xintercept = ts))
+  #
+  #
+  #   p
+  #
+  # })
 
   output$cpa_plot2_dygraph <- renderDygraph({
 
     validate(
       need(is.null(input$cpa_plot1_brush) == FALSE, "Selecciona unos puntos")
     )
-    points2<-brushedPoints(datos(), input$cpa_plot1_brush)
 
-    nightboundaries<-points2 %>% filter(hour(ts)==0 & minute(ts)==0)
-    m<-min(points2$ts)
+    points<-datos()
+    points2<-brushedPoints(datos(), input$cpa_plot1_brush)
+    min_pt2<-min(points2$ts)
+    max_pt2<-max(points2$ts)
+
+    nightboundaries<-points %>% filter(hour(ts)==0 & minute(ts)==0)
+    m<-min(points$ts)
     day<-paste0("Fecha: ", paste(year(m), month(m), day(m), sep="-"))
 
     #breaks
     breaks<-values$cpa_pts2()
 
-
+#prep for dygraphs
+    dy_points<-points[,c("ts", "sensor", "temperatura")]
+    dy_points$ts<-gsub(as.character(dy_points$ts), pattern = "-", replacement = "/")
+    dy_points<-tidyr::spread(dy_points, sensor, temperatura)
+    rownames(dy_points)<-dy_points$ts
+    dy_points$ts<-NULL
 #prep for dygraphs
     dy_points2<-points2[,c("ts", "sensor", "temperatura")]
     dy_points2$ts<-gsub(as.character(dy_points2$ts), pattern = "-", replacement = "/")
@@ -904,15 +934,17 @@ resume <- observeEvent(input$resume, {
     cols<-c("huevo", "nido", "amb")
     cols<-cols[cols %in% names(dy_points2)]
 
-    dygraph(dy_points2, main="Coloca las demarcaciones de eventos") %>%
+    p<-dygraph(dy_points, main="Coloca las demarcaciones de eventos") %>%
       dySeries(cols[1], label=cols[1]) %>% dySeries(cols[2], label=cols[2]) %>%
-      dyRangeSelector()
+      dyAxis("y", label = "Temp (C)", valueRange = c(input$ylim))
+    # %>%
+    #   dyRangeSelector(dateWindow = c(min_pt2, max_pt2))
+ #
+    for(i in 1:nrow(breaks)){
+      p<-p %>%  dyEvent(x = breaks[i,1], label='', labelLoc='bottom')
+    }
+p
 
-    #edits to make
-    #1
-    #make selected window reactive
-    #dyRangeSelector(dateWindow = c("1920-01-01", "1960-01-01")) that shit should be what comes from the first selection
-    #that allows for dygraphs window to scroll to end
 
     #then add new series with 2x temp resolution as data
     #restriction
@@ -937,7 +969,15 @@ resume <- observeEvent(input$resume, {
 
   })
 
-  values$toggles<-reactive({rep(NA, nrow(datos_crudos()*2))})
+  values$toggles<-reactive({
+    dc=datos_crudos()
+    tog_df<-data.frame("toggle"=rep(FALSE, nrow(dc)),
+               "ts"=dc$ts)
+
+    breaks<-values$cpa_pts2()
+    tog_df$toggle[tog_df$ts %in% breaks$ts]<-TRUE
+    tog_df
+               })
 
 
 
