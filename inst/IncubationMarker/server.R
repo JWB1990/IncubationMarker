@@ -832,7 +832,7 @@ resume <- observeEvent(input$resume, {
     #clicked_x_point<-parse_date_time(clicked_x_point, orders = "ymd HMS")
 
     list(
-      (input$cpa_plot2_dygraph_date_window),
+      ( values$dygraph_window),
 
     str(input$cpa_plot2_dygraph_click),
   #  dy_points,
@@ -947,10 +947,10 @@ resume <- observeEvent(input$resume, {
     cols<-c("huevo", "nido", "amb")
     cols<-cols[cols %in% names(dy_points2)]
 
-    p<-dygraph(dy_points, main="Coloca las demarcaciones de eventos") %>%
+    p<-dygraph(dy_points2, main="Coloca las demarcaciones de eventos") %>%
       dySeries(cols[1], label=cols[1]) %>% dySeries(cols[2], label=cols[2]) %>%
       dyAxis("y", label = "Temp (C)", valueRange = c(input$ylim)) %>%
-      dyRangeSelector(dateWindow = c(min_pt2, max_pt2)) %>%
+      dyRangeSelector(dateWindow = c(min_pt2, max_pt2), retainDateWindow=T) %>%
       dyOptions(labelsUTC = TRUE)
  #
     for(i in 1:nrow(breaks)){
@@ -959,27 +959,12 @@ resume <- observeEvent(input$resume, {
 p
 
 
-    #then add new series with 2x temp resolution as data
-    #restriction
-    #only one action available
-    #so it toggles breakpoints,
+
+  })
 
 
-#
-#     p<-ggplot(data=points2)+
-#       geom_line(data=points2,
-#                 aes(x=ts, y=temperatura, colour=sensor))+
-#       geom_point(data=points2,
-#                  aes(x=ts, y=temperatura, colour=sensor))+
-#
-#       scale_x_datetime(breaks = date_breaks("15 min"),
-#                        minor_breaks=date_breaks("1 min"), labels=date_format("%H:%M"),
-#                        limits = range(points2$ts))+
-#       ylim(input$ylim)+theme(legend.position="left")+xlab("Tiempo")+ylab("Temperatura")+geom_vline(data=nightboundaries, aes(xintercept=ts), alpha=0.5, lty=2)+
-#       ggtitle(day)+
-#       geom_vline(data=breaks, aes(xintercept = ts))
-#p
-
+  values$dygraph_window <- isolate({
+    input$cpa_plot2_dygraph_date_window
   })
 
   set_up_event<-observe({
@@ -993,14 +978,6 @@ p
 
 
 
-  #change_a_barrier<-eventReactive(input$cpa_max_dif_on,{
-   # values$toggles<-
-    #add influence of cpa_bpts()
-  #})
-  # change_a_barrier2<-eventReactive(input$cpa_max_dif_off,{
-  #   #values$toggles<-
-  #   #add influence of cpa_bpts()
-  # })
   change_a_toggle<-observeEvent(input$cpa_plot2_dygraph_click,{
     values$toggles$ts<-as.character(values$toggles$ts)
     clicked_x_point<-as.character(input$cpa_plot2_dygraph_click$x_closest_point)
@@ -1021,6 +998,8 @@ p
   datos_marcados_automatic<-reactive({
     points<-datos_crudos()
 
+    #change this to whole selection from ggplot, not from dygraphwindow
+
     #"2011-09-08T10:57:02.000Z"
     left_border<-parse_date_time(substr(gsub(input$cpa_plot2_dygraph_date_window[1], pattern = "T", replacement = " "), 1, 19), "Ymd HMS")
     #"2011-09-08T13:54:02.000Z"
@@ -1028,12 +1007,13 @@ p
 
 
   data_in_dygraph_window<-subset(points, points$ts >= left_border & points$ts <= right_border)
-  #change this
-  data_in_dygraph_window$ts<-as.character(data_in_dygraph_window$ts)
+  values$toggles$ts<-parse_date_time(values$toggles$ts, "Ymd HMS")
   data_in_dygraph_window<-inner_join(data_in_dygraph_window, values$toggles, by="ts")
   cuts_in_dygraph_window<-subset(data_in_dygraph_window,
                                                   data_in_dygraph_window$toggle==T)
 cuts_in_dygraph_window
+
+#this needs to return the raw data with event number 1, 2,3, 4....
 
 #use first and last to get all data within cuts
 
@@ -1041,10 +1021,15 @@ cuts_in_dygraph_window
 
   some_event<-observeEvent(input$chop_it_up, {
 
-    #first select the marked data
+
+    res_to_chop<-datos_marcados_automatic()
+    #chop up by evt number...
+
+
+    #then select the chopped data
       res<-rbind(
         values$all_datos_marcados_automatic,
-        datos_marcados_automatic()
+        res_to_chop
       )
 
 
@@ -1053,7 +1038,7 @@ cuts_in_dygraph_window
       #so first rbind, then retain only last etnries for each timestamp
 
 
-
+#and attach it into the main drag
       values$all_datos_marcados_automatic <- res
 
 

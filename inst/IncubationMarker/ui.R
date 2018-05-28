@@ -214,7 +214,7 @@ dateInput("day_zero", "Cuando es el dia 0? (si es desconocido dejalo vacio)", va
 
                  verbatimTextOutput("header_cpa"),
 
-                 h3("La serie de tiempo"),
+                 h3("La serie de tiempo: seleccione un periodo de 24h con datos continuos"),
 
           plotOutput("cpa_plot1", width=1250,
                      brush = brushOpts(
