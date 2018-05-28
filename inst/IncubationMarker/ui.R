@@ -227,6 +227,7 @@ dateInput("day_zero", "Cuando es el dia 0? (si es desconocido dejalo vacio)", va
                    # h3("Marca un evento"),
                    # uiOutput("cpa_plotui")
                    dygraphOutput("cpa_plot2_dygraph"),
+                   actionButton("chop_it_up", "Chop-Chop"),
                    verbatimTextOutput("cpatab")
             )
           ),

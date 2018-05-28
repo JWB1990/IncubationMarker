@@ -61,7 +61,7 @@ shinyServer(function(input, output) {
       d<-datos_crudos()
       empty_df<-d[-(1:nrow(d)),]
       values$all_datos_marcados <-  empty_df #this is the empty data frame for nests with 2 sensors
-
+      values$all_datos_marcados_automatic <-  empty_df #this is the empty data frame for nests with 2 sensors
     })
   })
     # output$obs_raw<-renderPrint({
@@ -832,12 +832,13 @@ resume <- observeEvent(input$resume, {
     #clicked_x_point<-parse_date_time(clicked_x_point, orders = "ymd HMS")
 
     list(
-      #(input$cpa_plot2_dygraph_date_window),
+      (input$cpa_plot2_dygraph_date_window),
 
     str(input$cpa_plot2_dygraph_click),
   #  dy_points,
   clicked_x_point,
-    values$toggles
+    #values$toggles,
+  str(datos_marcados_automatic())
     )
     })
 
@@ -928,7 +929,7 @@ resume <- observeEvent(input$resume, {
     day<-paste0("Fecha: ", paste(year(m), month(m), day(m), sep="-"))
 
     #breaks
-    breaks<-values$cpa_pts2()
+    breaks<-subset(values$toggles, values$toggles$toggle==TRUE)
 
 #prep for dygraphs
     dy_points<-points[,c("ts", "sensor", "temperatura")]
@@ -983,8 +984,7 @@ p
 
   set_up_event<-observe({
     dc=datos_crudos()
-    tog_df<-data.frame("toggle"=rep(FALSE, nrow(dc)),
-               "ts"=dc$ts)
+    tog_df<-data.frame("ts"=dc$ts, "toggle"=rep(FALSE, nrow(dc)))
 
     breaks<-values$cpa_pts2()
     tog_df$toggle[tog_df$ts %in% breaks$ts]<-TRUE
@@ -1017,6 +1017,49 @@ p
                click = brushOpts(id = "cpa_plot2_click")
     )
   })
+
+  datos_marcados_automatic<-reactive({
+    points<-datos_crudos()
+
+    #"2011-09-08T10:57:02.000Z"
+    left_border<-parse_date_time(substr(gsub(input$cpa_plot2_dygraph_date_window[1], pattern = "T", replacement = " "), 1, 19), "Ymd HMS")
+    #"2011-09-08T13:54:02.000Z"
+    right_border<-parse_date_time(substr(gsub(input$cpa_plot2_dygraph_date_window[2],  pattern ="T", replacement = " "), 1, 19), "Ymd HMS")
+
+
+  data_in_dygraph_window<-subset(points, points$ts >= left_border & points$ts <= right_border)
+  #change this
+  data_in_dygraph_window$ts<-as.character(data_in_dygraph_window$ts)
+  data_in_dygraph_window<-inner_join(data_in_dygraph_window, values$toggles, by="ts")
+  cuts_in_dygraph_window<-subset(data_in_dygraph_window,
+                                                  data_in_dygraph_window$toggle==T)
+cuts_in_dygraph_window
+
+#use first and last to get all data within cuts
+
+  })
+
+  some_event<-observeEvent(input$chop_it_up, {
+
+    #first select the marked data
+      res<-rbind(
+        values$all_datos_marcados_automatic,
+        datos_marcados_automatic()
+      )
+
+
+      #allow for fuckups: when ppl select the wrong thing, they
+      #can select it again and overwrite it
+      #so first rbind, then retain only last etnries for each timestamp
+
+
+
+      values$all_datos_marcados_automatic <- res
+
+
+    })
+
+
 
 
 })
