@@ -119,8 +119,8 @@ conditionalPanel(condition="input.tabs=='cpa'",
                  uiOutput("fitcontrols_cpa"),
                  # numericInput("movingaverage_width", "Ventana del Promedio", value = 10, min = 1,max=500),
                  # radioButtons("cpa_meth", "Metodologia de CPA", choices = c("PELT", "PELT Manual", "BinSeg"), selected = "PELT"),
-                 sliderInput("cpa_max_dif_on", "Maximum Difference: On-Bout", c(1.5,5), min = 0,max=15, round=-3, step=0.001),
-                 sliderInput("cpa_max_dif_off", "Maximum Difference: Off-Bout", c(-5, -1.5), min = -15,max=0, round=-3, step=0.001)
+                 sliderInput("cpa_max_dif_on", "Maximum Difference: On-Bout", c(1.5,10), min = 0,max=15, round=-3, step=0.001),
+                 sliderInput("cpa_max_dif_off", "Maximum Difference: Off-Bout", c(-10, -1.5), min = -15,max=0, round=-3, step=0.001)
 
                  #breakpoint controls             #1plot of time series with breakpoints, zoomable w brush
                  #
@@ -228,7 +228,8 @@ dateInput("day_zero", "Cuando es el dia 0? (si es desconocido dejalo vacio)", va
                    # uiOutput("cpa_plotui")
                    dygraphOutput("cpa_plot2_dygraph"),
                    actionButton("chop_it_up", "Chop-Chop"),
-                   verbatimTextOutput("cpatab")
+                   verbatimTextOutput("cpatab"),
+                   downloadButton("downloadData", "Download shit")
             )
           ),
 

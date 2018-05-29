@@ -49,6 +49,7 @@ shinyServer(function(input, output) {
 
   #asegura que los formatos estan corectos
   cru$ts<-parse_date_time(paste(cru$hora, cru$fecha), orders = c("HMS mdy", "HMS mdY"))
+
   #cru
 
 
@@ -653,8 +654,8 @@ res
 
     points_final<-values$all_datos_marcados %>% gather("sensor", "temperatura", first(which(names(datos_crudos()) %in% c("huevo", "nido"))))
     #this is assuming 60 seconds recording intervals
-    points_final$contig<-rep(1:(length(which(diff(as.numeric(points_final$ts))>60))+1),
-                             (rle(diff(as.numeric(points_final$ts)))$lengths+1)[rle(diff(as.numeric(points_final$ts)))$values==60])
+    points_final$contig<-rep(1:(length(which(diff(as.numeric(points_final$ts))>input$temp_res))+1),
+                             (rle(diff(as.numeric(points_final$ts)))$lengths+1)[rle(diff(as.numeric(points_final$ts)))$values==input$temp_res])
 
     min2<-min(points_final$ts)-60
     max2<-max(points_final$ts)+60
@@ -675,7 +676,7 @@ if(nrow(marked_rects())==0){
 
       p<-ggplot()+geom_line(data=points_final,
                             aes(x=ts, y=temperatura, colour=sensor, group=contig))+
-        geom_rect(data=mr, aes(xmin=start-30, xmax=end+30, ymin=-Inf, ymax=Inf, fill=patron), alpha=0.4)+
+        geom_rect(data=mr, aes(xmin=start-input$temp_res/2, xmax=end+input$temp_res/2, ymin=-Inf, ymax=Inf, fill=patron), alpha=0.4)+
         scale_fill_manual(values=palette)+geom_vline(data=nightboundaries, aes(xintercept=ts), alpha=0.5, lty=2)
 
  }
@@ -776,6 +777,7 @@ resume <- observeEvent(input$resume, {
                  choices =  avail)
   })
   cpa_pts1<-reactive({
+    col<-input$fit_selector_cpa
     cru<-datos_crudos()
 
     #add filter here
@@ -784,7 +786,7 @@ resume <- observeEvent(input$resume, {
     # mins<-apply(cru[,cols], 2, FUN=function(x){min(x, na.rm=T)})
     # cru<-subset(cru, maxes < max(input$ylim) & mins > min(input$ylim))
 
-    col<-input$fit_selector_cpa
+
 
     # m.data<-rollmean(cru[,col], k=input$movingaverage_width)
     #
@@ -832,17 +834,21 @@ resume <- observeEvent(input$resume, {
     #clicked_x_point<-parse_date_time(clicked_x_point, orders = "ymd HMS")
 
     list(
-      ( values$dygraph_window),
+      ( input$cpa_plot2_dygraph_window),
 
     str(input$cpa_plot2_dygraph_click),
   #  dy_points,
-  clicked_x_point,
+  #clicked_x_point,
     #values$toggles,
-  str(datos_marcados_automatic())
+    datos_marcados_automatic()
     )
     })
 
   output$cpa_plot1 <- renderPlot({
+    validate(
+    need(try(is.null(cpa_pts1())== F) , "Espera")
+    )
+
     cr<-datos()
     nightboundaries<-cr %>% filter(hour(ts)==0 & minute(ts)==0)
 
@@ -917,7 +923,7 @@ resume <- observeEvent(input$resume, {
 
     validate(
       need(is.null(input$cpa_plot1_brush) == FALSE, "Selecciona unos puntos")
-    )
+      )
 
     points<-datos()
     points2<-brushedPoints(datos(), input$cpa_plot1_brush)
@@ -939,10 +945,15 @@ resume <- observeEvent(input$resume, {
     dy_points$ts<-NULL
 #prep for dygraphs
     dy_points2<-points2[,c("ts", "sensor", "temperatura")]
+    #
+    tz(dy_points2$ts)<-"America/Bogota"
+    #
     dy_points2$ts<-gsub(as.character(dy_points2$ts), pattern = "-", replacement = "/")
+
     dy_points2<-tidyr::spread(dy_points2, sensor, temperatura)
     rownames(dy_points2)<-dy_points2$ts
     dy_points2$ts<-NULL
+    dy_points2<-as.xts(dy_points2, tz="UTC")
 
     cols<-c("huevo", "nido", "amb")
     cols<-cols[cols %in% names(dy_points2)]
@@ -951,7 +962,8 @@ resume <- observeEvent(input$resume, {
       dySeries(cols[1], label=cols[1]) %>% dySeries(cols[2], label=cols[2]) %>%
       dyAxis("y", label = "Temp (C)", valueRange = c(input$ylim)) %>%
       dyRangeSelector(dateWindow = c(min_pt2, max_pt2), retainDateWindow=T) %>%
-      dyOptions(labelsUTC = TRUE)
+      dyOptions(useDataTimezone = T)
+
  #
     for(i in 1:nrow(breaks)){
       p<-p %>%  dyEvent(x = breaks[i,1], label='', labelLoc='bottom')
@@ -1001,30 +1013,47 @@ p
     #change this to whole selection from ggplot, not from dygraphwindow
 
     #"2011-09-08T10:57:02.000Z"
-    left_border<-parse_date_time(substr(gsub(input$cpa_plot2_dygraph_date_window[1], pattern = "T", replacement = " "), 1, 19), "Ymd HMS")
+    brushed_points<-cpa_bpts2()
+    left_border<-min(brushed_points$ts, na.rm = T)
+      #parse_date_time(substr(gsub(input$cpa_plot2_dygraph_date_window[1], pattern = "T", replacement = " "), 1, 19), "Ymd HMS")
     #"2011-09-08T13:54:02.000Z"
-    right_border<-parse_date_time(substr(gsub(input$cpa_plot2_dygraph_date_window[2],  pattern ="T", replacement = " "), 1, 19), "Ymd HMS")
+    right_border<-max(brushed_points$ts, na.rm = T)
+      parse_date_time(substr(gsub(input$cpa_plot2_dygraph_date_window[2],  pattern ="T", replacement = " "), 1, 19), "Ymd HMS")
 
 
-  data_in_dygraph_window<-subset(points, points$ts >= left_border & points$ts <= right_border)
+  data_in_ggplot_selected<-subset(points, points$ts >= left_border & points$ts <= right_border)
   values$toggles$ts<-parse_date_time(values$toggles$ts, "Ymd HMS")
-  data_in_dygraph_window<-inner_join(data_in_dygraph_window, values$toggles, by="ts")
-  cuts_in_dygraph_window<-subset(data_in_dygraph_window,
-                                                  data_in_dygraph_window$toggle==T)
-cuts_in_dygraph_window
+  data_in_dygraph_window<-inner_join(data_in_ggplot_selected, values$toggles, by="ts")
 
-#this needs to return the raw data with event number 1, 2,3, 4....
 
-#use first and last to get all data within cuts
+  data_in_dygraph_window$evt_number<-NA
+  #chop up by evt number...
+  cuts_in_dygraph_window<-subset(data_in_dygraph_window,data_in_dygraph_window$toggle==T)
+  for(i in 1:nrow(cuts_in_dygraph_window)){
+    if(i ==1){data_in_dygraph_window$evt_number[data_in_dygraph_window$ts<cuts_in_dygraph_window$ts[i]-input$temp_res/2]<-1}
+    if(i ==nrow(cuts_in_dygraph_window)){data_in_dygraph_window$evt_number[data_in_dygraph_window$ts>cuts_in_dygraph_window$ts[i]-input$temp_res/2]<-nrow(cuts_in_dygraph_window)}
+    else{data_in_dygraph_window$evt_number[data_in_dygraph_window$ts<(cuts_in_dygraph_window$ts[i]-input$temp_res/2) &
+                                             (data_in_dygraph_window$ts>cuts_in_dygraph_window$ts[i-1]-input$temp_res/2)]<-i
+    }}
+
+
+
+
+  data_in_dygraph_window
 
   })
 
-  some_event<-observeEvent(input$chop_it_up, {
+  the_slice<-observeEvent(input$chop_it_up, {
+
+    res_to_chop<-all_datos_automatic()
+
+    #call first event on_asymptote
+    res_to_chop$patron[res_to_chop$evt_number==1]<-"on_asymptote"
 
 
-    res_to_chop<-datos_marcados_automatic()
-    #chop up by evt number...
-
+    split_res_to_chop<-split(res_to_chop, res_to_chop$evt_number)
+    #this is the money maker
+    #res_to_chop<-do.call(rbind, lapply(split_res_to_chop, fit_each_bout))
 
     #then select the chopped data
       res<-rbind(
@@ -1045,6 +1074,29 @@ cuts_in_dygraph_window
     })
 
 
+
+  ###############
+  # workshop to manually make function
+  #################
+
+
+  finaldatatodownload<-reactive({
+    final<-datos_marcados_automatic()
+    final
+  })
+  date<-reactive({
+    gsub(substr(Sys.time(), 1, 19), pattern = " ", replacement = "_")
+  })
+  # Downloadable csv of selected dataset ----
+  output$downloadData <- downloadHandler(
+    filename = function() {
+      paste0(paste(input$location,
+                   date(), sep="_"), ".csv")
+    },
+    content = function(file) {
+      write.csv(finaldatatodownload(), file, row.names = FALSE)
+    }
+  )
 
 
 })

@@ -13,7 +13,7 @@
 
 
 
-list.of.packages <- c("changepoint", "devtools", "dplyr","dygraphs",  "ggplot2", "lubridate", "scales", "shiny", "shinydashboard", "shinyjs", "tidyr","V8",  "zoo")
+list.of.packages <- c("changepoint", "devtools", "dplyr","dygraphs",  "ggplot2", "lubridate", "scales", "shiny", "shinydashboard", "shinyjs", "tidyr","V8", "xts", "zoo")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
@@ -35,6 +35,7 @@ library(shinydashboard)
 library(shinyjs)
 library(thermPerf)
 library(tidyr)
+library(xts)
 library(zoo)
 
 Sys.setenv(TZ='GMT')
@@ -72,3 +73,9 @@ jsResetCode <- "shinyjs.reset = function() {history.go(0)}" # Define the js meth
 on_text<-HTML("Seleccionaras un On-Bout")
 off_text<-HTML("Seleccionaras un Off-Bout")
 
+
+#############
+# fitting and splitting function
+###########
+
+#fit_each_bout
