@@ -78,4 +78,10 @@ off_text<-HTML("Seleccionaras un Off-Bout")
 # fitting and splitting function
 ###########
 
+#source
 #fit_each_bout
+
+
+########################
+#
+#
